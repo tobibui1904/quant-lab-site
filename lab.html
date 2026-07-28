@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Quant Lab · Tobi Bui</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&amp;family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&amp;family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:dark;scroll-behavior:smooth}
+  body{background:#0C110F;color:#E9EEEB;-webkit-font-smoothing:antialiased;font-family:'DM Sans',-apple-system,'Segoe UI',sans-serif;overflow-x:hidden}
+  a{color:#4EC79D;text-decoration:none}
+  a:hover{color:#7FE0BD}
+  ::selection{background:rgba(29,158,117,.3)}
+  *{scrollbar-width:thin;scrollbar-color:#2C3B33 transparent}
+  @keyframes qlPulse{50%{opacity:.3}}
+  @keyframes qlDrift{to{background-position:0 -320px}}
+  @keyframes qlDraw{to{stroke-dashoffset:0}}
+  @keyframes qlFade{from{opacity:0}to{opacity:1}}
+  @keyframes qlFlow{to{stroke-dashoffset:-64}}
+  @keyframes qlGlow{0%,100%{opacity:.55}50%{opacity:1}}
+</style>
+</helmet>
+
+<div style="position:relative;width:100%;background:#0C110F;font-family:'DM Sans',sans-serif">
+
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,rgba(233,238,235,.018) 31px,rgba(233,238,235,.018) 32px)"></div>
+
+  <header style="position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:20px;padding:14px clamp(18px,4vw,54px);background:rgba(12,17,15,.72);backdrop-filter:blur(14px);border-bottom:1px solid #1F2A24">
+    <a href="#top" style="font-family:'DM Serif Display',Georgia,serif;font-style:italic;font-size:21px;color:#E9EEEB;letter-spacing:.005em">Quant Lab</a>
+    <span style="width:1px;height:18px;background:#26332C"></span>
+    <span style="font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:#5F6F66">Tobi Bui</span>
+    <nav style="margin-left:auto;display:flex;align-items:center;gap:clamp(12px,2vw,26px);font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase">
+      <a href="#desks" style="color:#93A49B">Desks</a>
+      <a href="#meridian" style="color:#93A49B">Models</a>
+      <a href="#flow" style="color:#93A49B">Flow</a>
+      <a href="#about" style="color:#93A49B">About</a>
+      <a data-hub-link data-hub-state="closed" style="display:flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid #1D9E75;border-radius:7px;color:#3AC493;background:rgba(29,158,117,.07)"><i class="ti ti-arrow-right" style="font-size:13px"></i>Enter the Operation</a>
+    </nav>
+  </header>
+
+  <section id="top" data-screen-label="Hero" style="position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden;padding:120px clamp(18px,4vw,54px) 90px">
+    <canvas data-ql-canvas="" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0"></canvas>
+    <div style="position:absolute;inset:0;z-index:1;background:radial-gradient(120% 80% at 50% 42%,transparent 0%,rgba(12,17,15,.55) 62%,#0C110F 100%)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:220px;z-index:1;background:linear-gradient(to bottom,transparent,#0C110F)"></div>
+
+    <div style="position:relative;z-index:2;max-width:1180px;margin:0 auto;width:100%;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:clamp(28px,5vw,72px);align-items:end">
+      <div>
+        <div style="display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#1D9E75">
+          <span style="width:44px;height:1px;background:#26332C"></span>
+          <span>Est. 2023 · Raleigh, NC</span>
+        </div>
+        <h1 style="font-family:'DM Serif Display',Georgia,serif;font-style:italic;font-weight:400;font-size:clamp(52px,9.5vw,126px);line-height:.94;letter-spacing:-.025em;color:#E9EEEB;margin:20px 0 0;text-wrap:balance">Eleven desks,<br>one ledger.</h1>
+        <div style="width:104px;margin:26px 0 22px;border-bottom:5px double #1D9E75"></div>
+        <p style="max-width:600px;font-size:clamp(15px,1.5vw,18px);line-height:1.62;color:#93A49B;text-wrap:pretty">A research and execution stack built by <strong style="color:#E9EEEB;font-weight:500">Tobi Bui</strong> — eleven marimo notebooks covering fundamentals, macro, forex, crypto, treasuries and options spreads, served as one FastAPI application. Live capital runs through OANDA and Alpaca. The models are honest about what they can and cannot predict.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:34px">
+          <a data-hub-link data-hub-state="closed" style="display:flex;align-items:center;gap:10px;padding:14px 26px;border-radius:9px;background:#1D9E75;color:#06130E;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;box-shadow:0 14px 40px -14px rgba(29,158,117,.7)" style-hover="background:#3AC493;color:#06130E"><i class="ti ti-player-play" style="font-size:15px"></i>Enter the Operation</a>
+          <a href="https://github.com/tobibui1904" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:9px;border:1px solid #26332C;color:#93A49B;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="border-color:#1D9E75;color:#E9EEEB"><i class="ti ti-brand-github" style="font-size:15px"></i>View source</a>
+          <a href="Tobi_Bui_Resume.pdf" target="_blank" style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:9px;border:1px solid #26332C;color:#93A49B;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="border-color:#C9A961;color:#E9EEEB"><i class="ti ti-file-text" style="font-size:15px"></i>Résumé</a>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#5F6F66">
+          <span data-ql-lamp="" style="width:6px;height:6px;border-radius:50%;background:#3AC493;box-shadow:0 0 8px rgba(58,196,147,.7);animation:qlPulse 2.4s ease-in-out infinite"></span>
+          <span>Book, marked to market</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="padding:15px 16px;background:rgba(17,24,20,.7);border:1px solid #1F2A24;border-radius:10px;backdrop-filter:blur(6px)">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Notebooks</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:30px;color:#E9EEEB;line-height:1.1;margin-top:6px">11</div>
+          </div>
+          <div style="padding:15px 16px;background:rgba(17,24,20,.7);border:1px solid #1F2A24;border-radius:10px;backdrop-filter:blur(6px)">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Live venues</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:30px;color:#E9EEEB;line-height:1.1;margin-top:6px">2</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9.5px;color:#5F6F66;margin-top:3px">OANDA · Alpaca</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66">
+      <span>Scroll</span>
+      <span style="width:1px;height:34px;background:linear-gradient(to bottom,#26332C,transparent)"></span>
+    </div>
+  </section>
+
+  <section data-screen-label="Stack" style="position:relative;z-index:4;padding:clamp(70px,10vh,130px) clamp(18px,4vw,54px);border-top:1px solid #1F2A24;background:#0C110F">
+    <div style="max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(30px,6vw,80px);align-items:center">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 01 — The stack</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 18px">Four sheets,<br>bound together.</h2>
+        <p style="max-width:460px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Market data enters at the bottom. Each notebook is a self-contained research sheet. <code style="font-family:'DM Mono',monospace;color:#C9D2CD;background:#131B16;padding:2px 6px;border-radius:5px;font-size:13.5px">One central hub</code> binds all of them into a single ASGI application, and the browser sees one hub with one port.</p>
+        <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px;font-family:'DM Mono',monospace;font-size:12px;color:#93A49B">
+          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">04</span><span style="width:9px;height:9px;border:1px solid #3AC493;border-radius:2px"></span>Browser shell — sidebar, blotters, iframes</div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">03</span><span style="width:9px;height:9px;border:1px solid #1D9E75;border-radius:2px"></span>FastAPI hub — routes, gating, /api</div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">02</span><span style="width:9px;height:9px;border:1px solid #C9A961;border-radius:2px"></span>marimo notebooks — 11 reactive desks</div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">01</span><span style="width:9px;height:9px;border:1px solid #5F6F66;border-radius:2px"></span>Data — FRED, SEC EDGAR, OANDA, Alpaca, FedInvest</div>
+        </div>
+      </div>
+
+      <div data-ql-stack="" style="perspective:1400px;height:clamp(340px,44vw,520px);display:flex;align-items:center;justify-content:center">
+        <div data-ql-stack-inner="" style="position:relative;width:min(100%,470px);height:300px;transform-style:preserve-3d;transform:rotateX(56deg) rotateZ(-38deg)">
+          <div data-ql-sheet="0" style="position:absolute;inset:0;transform-style:preserve-3d;border:1px solid #2C3B33;border-radius:14px;background:linear-gradient(140deg,#16201B,#0F1512);box-shadow:0 30px 60px -30px rgba(0,0,0,.9);padding:18px 22px">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">01 · Data feeds</div>
+            <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">FRED</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">EDGAR</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">FedInvest</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">OANDA</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">Alpaca</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">Polymarket</span>
+            </div>
+          </div>
+          <div data-ql-sheet="1" style="position:absolute;inset:0;transform-style:preserve-3d;border:1px solid #3A4A42;border-radius:14px;background:linear-gradient(140deg,#1A2620,#111814);box-shadow:0 30px 60px -30px rgba(0,0,0,.9);padding:18px 22px">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#C9A961">02 · marimo notebooks</div>
+            <div style="margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px dashed #4A3E22;border-radius:4px"></span>
+            </div>
+          </div>
+          <div data-ql-sheet="2" style="position:absolute;inset:0;transform-style:preserve-3d;border:1px solid #1D9E75;border-radius:14px;background:linear-gradient(140deg,#13271F,#0F1B16);box-shadow:0 34px 70px -30px rgba(29,158,117,.35);padding:18px 22px">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#3AC493">03 · FastAPI hub — main.py</div>
+            <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;line-height:1.9">
+              <div>hub.mount("/", marimo_asgi)</div>
+              <div>GET /api/status · /api/pair-hash</div>
+              <div>GET /api/{venue}/account · /positions</div>
+            </div>
+          </div>
+          <div data-ql-sheet="3" style="position:absolute;inset:0;transform-style:preserve-3d;border:1px solid #3AC493;border-radius:14px;background:linear-gradient(140deg,#101613,#0C110F);box-shadow:0 40px 80px -30px rgba(0,0,0,1);padding:0;overflow:hidden">
+            <div style="display:flex;height:100%">
+              <div style="width:96px;background:#101613;border-right:1px solid #1F2A24;padding:12px 10px;display:flex;flex-direction:column;gap:7px">
+                <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:13px;color:#E9EEEB">Quant Lab</div>
+                <div style="width:26px;border-bottom:3px double #1D9E75;margin-bottom:4px"></div>
+                <span style="height:7px;border-radius:2px;background:#1F2A24"></span>
+                <span style="height:7px;border-radius:2px;background:rgba(29,158,117,.45)"></span>
+                <span style="height:7px;border-radius:2px;background:#1F2A24"></span>
+                <span style="height:7px;border-radius:2px;background:#1F2A24"></span>
+                <span style="height:7px;border-radius:2px;background:#1F2A24"></span>
+              </div>
+              <div style="flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">04 · tobi.tail810f4b.ts.net</div>
+                <div style="flex:1;border:1px solid #1F2A24;border-radius:8px;background:linear-gradient(160deg,rgba(29,158,117,.08),transparent)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="desks" data-screen-label="Desks" style="position:relative;z-index:4;padding:clamp(70px,10vh,120px) clamp(18px,4vw,54px);border-top:1px solid #1F2A24">
+    <div style="max-width:1180px;margin:0 auto">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 02 — The desks</div>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 0">Eleven notebooks, three books.</h2>
+        </div>
+        <p style="max-width:380px;font-size:14.5px;line-height:1.6;color:#5F6F66">Ordering follows the ledger index in the sidebar. Two spread desks stay sealed until the fundamental verdict names them.</p>
+      </div>
+
+      <div style="margin-top:44px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Research</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px;perspective:1200px">
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-building-bank" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">01</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Fundamental</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Filings, ratios &amp; the option-strategy verdict for the active pair.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-flame" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">02</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Macro Research</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">FRED factor models — sector betas under macro stress, with conditional Monte Carlo simulation.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-eye-off" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">03</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">OTC Track</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Off-exchange tape — short volume, dark pools &amp; short interest.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+      </div>
+
+      <div style="margin-top:34px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Markets</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px;perspective:1200px">
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-currency-dollar" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">04</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Forex Dashboard</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">FX pairs ML ensemble, executed through OANDA.</p>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:10px"></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-chart-candle" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">05</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">LETF Backtest</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">3X leveraged-ETF hedges — overlays, backtested.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-coins" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">06</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Crypto</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">MAPPO-LSTM agents trading crypto pairs on Alpaca.</p>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:10px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></span></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-crystal-ball" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">07</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Prediction Markets</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Polymarket desk driven by an LLM broker.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-certificate" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">08</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Treasury Securities</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Bills, Notes, Bonds, TIPS, FRNs &amp; STRIPS — curves fitted with rateslib.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+      </div>
+
+      <div style="margin-top:34px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Strategies</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px;perspective:1200px">
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-wallet" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">09</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Pair Trading</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Cointegration screens &amp; live spread execution.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#0F1512;border:1px solid #2A2417;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-trending-up" style="font-size:22px;color:#C9A961"></i><span style="display:flex;align-items:center;gap:7px"><i class="ti ti-lock" style="font-size:12px;color:#C9A961"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">10</span></span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#C9D2CD">Bull Call Spread</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#7A8A81">Defined-risk call debit spread on the bullish leg.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#C9A961">Sealed · unlocked by verdict</div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#0F1512;border:1px solid #2A2417;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-trending-down" style="font-size:22px;color:#C9A961"></i><span style="display:flex;align-items:center;gap:7px"><i class="ti ti-lock" style="font-size:12px;color:#C9A961"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">11</span></span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#C9D2CD">Bear Put Spread</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#7A8A81">Defined-risk put debit spread on the bearish leg.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#C9A961">Sealed · unlocked by verdict</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="meridian" data-screen-label="Meridian" style="position:relative;z-index:4;padding:clamp(70px,10vh,120px) clamp(18px,4vw,54px);border-top:1px solid #1F2A24;background:linear-gradient(180deg,#0E1512,#0C110F)">
+    <div style="max-width:1180px;margin:0 auto">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 03 — ML Algorithms</div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+        <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 0">Three learners, three markets.</h2>
+        <p style="max-width:400px;font-size:14.5px;line-height:1.6;color:#5F6F66">A transformer for direction, a state-space filter for spreads, and a multi-agent policy for crypto — each sized to its market, each tested walk-forward.</p>
+      </div>
+      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 01 · Meridian.AI — forex &amp; stocks</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start;margin-top:16px">
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em">A small model<br>that had to learn.</h2>
+          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Meridian is a 430k-parameter transformer for financial time series — grouped-query attention, rotary positions, a two-expert mixture with top-2 routing, and a loss that trains price and direction together. An 11M-parameter version collapsed onto a constant prediction; the smaller network has to find real signal to reduce the loss.</p>
+          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">It retrains hourly on a CPU GitHub Actions runner and publishes each checkpoint to Hugging Face. A sanity gate blocks a degenerate model from ever shipping.</p>
+          <div style="margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Params</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">430K</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Features</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">44</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Sequence</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">30</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Layers</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">3</div></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div data-model3d="" style="border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(160deg,#111814,#0C110F);padding:24px 24px 20px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <i class="ti ti-stack-2" style="font-size:17px;color:#3AC493"></i>
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The forward pass</div>
+              <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Hover a layer</div>
+            </div>
+
+            <div data-model-scene="" style="margin-top:20px;perspective:1200px;perspective-origin:50% 30%">
+              <div data-model-stack="" style="position:relative;height:352px;transform-style:preserve-3d;transform:rotateX(16deg) rotateY(-13deg);transition:transform .3s ease-out">
+
+            <div data-layer="0" data-cap="Thirty timesteps of raw open, high, low, close and volume enter at the top of the stack." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-chart-bar" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">OHLCV · last 30 timesteps</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Input window</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+
+            <div data-layer="1" data-cap="Each timestep is turned into 44 indicators, z-scored on training statistics and clamped to [-10, 10] so an extreme value cannot flatten the gradients." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-adjustments" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">44 technical indicators</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">RSI · MACD · BB · ATR · OBV · VWAP</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+
+            <div data-layer="2" data-cap="Grouped-query attention lets every timestep look at the others while sharing key and value projections; rotary positions give it relative time without a lookup table." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-binary-tree" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Grouped-query attention + RoPE</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Sequence mixing</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+
+            <div data-layer="3" data-cap="Two SwiGLU experts with top-2 routing — different market conditions get sent to the experts best suited to them." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-route-2" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Mixture of experts · top-2</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">SwiGLU routing</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+
+            <div data-layer="4" data-cap="Both heads forecast, and learned weights blend them into one number. The direction signal comes out of the same pass, which is why the loss trains both at once." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-target-arrow" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Two prediction heads, blended</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Price + direction</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+              </div>
+            </div>
+
+            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">Thirty timesteps of raw open, high, low, close and volume enter at the top of the stack.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:34px;border:1px solid #1F2A24;border-radius:16px;background:#0F1512;padding:clamp(22px,3vw,32px)">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <i class="ti ti-ruler-measure" style="font-size:17px;color:#3AC493"></i>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:clamp(21px,2.5vw,28px);color:#E9EEEB">Where those numbers come from</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66;margin-left:auto">Method, not marketing</div>
+        </div>
+        <p style="margin-top:12px;max-width:820px;font-size:14.5px;line-height:1.65;color:#93A49B;text-wrap:pretty">A directional accuracy figure is only meaningful next to the protocol that produced it. Every number on this page comes from the same walk-forward test, scored against the naïve baseline it has to beat.</p>
+
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
+          <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">01 · The test</div>
+            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Walk-forward</div>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">Pick a random historical date. Give the model only what existed up to that date, ask for the next day's move, compare the sign to what actually happened. Repeat.</p>
+          </div>
+          <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">02 · No lookahead</div>
+            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Strictly causal</div>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">Every one of the 44 features is backward-looking and the target is strictly in the future. Training splits 80/20 chronologically — validation is always the most recent slice, never a shuffled sample.</p>
+          </div>
+          <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">03 · The baseline</div>
+            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Always-up</div>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">Markets drift up, so guessing "up" every day already scores 51.7% on FX and 51.5% on equities. Edge is accuracy minus that baseline — not accuracy minus fifty.</p>
+          </div>
+          <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">04 · The test statistic</div>
+            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">z-score vs baseline</div>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">A one-proportion test asks whether the gap could be luck. z = 8.4 on 960 FX predictions is not luck. z = 1.3 on 1,680 equity predictions is indistinguishable from it.</p>
+          </div>
+        </div>
+
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+          <div style="border:1px solid #223029;border-radius:11px;background:#0C110F;padding:16px 18px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Sample sizes</div>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px;font-family:'DM Mono',monospace;font-size:12px">
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Forex · 8 major pairs</span><span style="color:#E9EEEB">960 predictions</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Stocks</span><span style="color:#E9EEEB">1,680 predictions</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Training pool</span><span style="color:#E9EEEB">≤ 60K most recent</span></div>
+            </div>
+          </div>
+          <div style="border:1px solid #223029;border-radius:11px;background:#0C110F;padding:16px 18px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">What is being optimised</div>
+            <div style="margin-top:12px;font-family:'DM Mono',monospace;font-size:12px;color:#3AC493;background:#0F1512;border:1px solid #223029;border-radius:7px;padding:10px 12px">loss = 0.6·Huber + 0.4·weightedBCE</div>
+            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#93A49B">Price error and direction error are trained together, which is why the direction signal falls out of the same forward pass. Features are z-scored on training statistics and clamped to [-10, 10].</p>
+          </div>
+          <div style="border:1px solid #2A2417;border-radius:11px;background:linear-gradient(150deg,rgba(201,169,97,.07),transparent);padding:16px 18px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#C9A961">Why to trust the pipeline</div>
+            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#93A49B">Before publishing, a sanity gate runs each fresh checkpoint over held-out windows and looks for the failure signatures of a broken model: a constant output, a collapse onto one direction, or a blown-up prediction scale. A degenerate checkpoint is deleted instead of pushed and the run is marked failed.</p>
+            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#7A8A81">This gate exists because pre-1.0 versions reported far higher training accuracy while performing near chance live — a contaminated pipeline had let the model collapse onto a near-constant prediction.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 02 · Prophet × Kalman — pair trading</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start;margin-top:16px">
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(30px,3.8vw,48px);line-height:1.06;letter-spacing:-.02em">The spread,<br>not the forecast.</h2>
+          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The pair-trading desk hunts for pairs that move together in a way that is statistically hard to fake: Engle–Granger cointegration over every pair in the sector — train window only, correlation floor, Benjamini–Hochberg false-discovery control — then an ADF test on the OLS hedge-ratio spread.</p>
+          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The trade signal is a Kalman filter that re-estimates the hedge ratio every bar and standardises the residual into a z-score. Prophet fits a grid-searched 365-day projection for each leg, but it stays a projection: no forecast price ever reaches the trade loop, because P&amp;L computed on forecasted prices is not real performance.</p>
+          <div style="margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Signal</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">Kalman z</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Entry</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">|z| &gt; 1.25</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Exit</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">|z| &lt; 0.5</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Warm-up</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">30 bars</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div data-model3d="" style="border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(160deg,#111814,#0C110F);padding:24px 24px 20px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <i class="ti ti-wave-sine" style="font-size:17px;color:#3AC493"></i>
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The signal path</div>
+              <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Hover a layer</div>
+            </div>
+            <div data-model-scene="" style="margin-top:20px;perspective:1200px;perspective-origin:50% 30%">
+              <div data-model-stack="" style="position:relative;height:352px;transform-style:preserve-3d;transform:rotateX(16deg) rotateY(-13deg);transition:transform .3s ease-out">
+            <div data-layer="0" data-cap="The whole sector is screened on the training window only — fitting the screen on all history and then backtesting the resulting spread would leak the future into the result." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-arrows-shuffle" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Adjusted closes · train window only</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Sector universe</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="1" data-cap="Engle–Granger over every pair, with a correlation floor and Benjamini–Hochberg false-discovery control — on 100 independent series, raw p-values would manufacture spurious pairs by construction." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-link" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Engle–Granger + BH-FDR</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Cointegration screen</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="2" data-cap="One leg regresses on the other for the hedge ratio, and an ADF test checks that the resulting spread — not just the price ratio — is stationary enough to trade." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-scale" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">OLS hedge ratio · ADF on the spread</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Spread construction</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="3" data-cap="A Kalman filter re-estimates the hedge ratio each bar and standardises the residual by the square root of its conditional variance into a clean z-score. The first 30 bars are masked as warm-up." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-wave-sine" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Kalman filter state</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Beta re-estimated every bar</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="4" data-cap="Enter when |z| stretches past 1.25, exit when it mean-reverts under 0.5. After a stop-out the rule stays disarmed until the spread actually normalises, so a still-diverging pair cannot be re-entered." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-arrows-left-right" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trade rules on z</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Enter |z| &gt; 1.25 · exit |z| &lt; 0.5</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+              </div>
+            </div>
+            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">The whole sector is screened on the training window only — no future data touches the screen.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 03 · MAPPO-LSTM — crypto</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start;margin-top:16px">
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(30px,3.8vw,48px);line-height:1.06;letter-spacing:-.02em">Three agents,<br>one critic.</h2>
+          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">One reinforcement-learning agent per market — BTC/USD, ETH/USD and ETH/BTC — each an LSTM actor that sees only its own pair. A single centralised critic watches all three at once: centralised training, decentralised execution.</p>
+          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Training is PPO with clipped ratios and GAE; each step's reward is P&amp;L as a fraction of the agent's $10,000 book, so rewards, values and returns share one scale. Walk-forward folds retrain from scratch and keep the best-on-validation checkpoint — the one the live Alpaca desk actually loads.</p>
+          <div style="margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Agents</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">3</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Window</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">20 × 14</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">LSTM hidden</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">64</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Clip ε</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">0.2</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div data-model3d="" style="border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(160deg,#111814,#0C110F);padding:24px 24px 20px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <i class="ti ti-topology-star-3" style="font-size:17px;color:#3AC493"></i>
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The agent loop</div>
+              <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Hover a layer</div>
+            </div>
+            <div data-model-scene="" style="margin-top:20px;perspective:1200px;perspective-origin:50% 30%">
+              <div data-model-stack="" style="position:relative;height:352px;transform-style:preserve-3d;transform:rotateX(16deg) rotateY(-13deg);transition:transform .3s ease-out">
+            <div data-layer="0" data-cap="Each agent sees a 20-step window of 14 features — OHLCV, trade count, VWAP, EMAs, SMA, ADX, DMI and ATR — for its own pair only." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-layout-grid" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">20 × 14 windows · 3 pairs</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Local observations</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="1" data-cap="One actor per market: BTC/USD, ETH/USD, ETH/BTC. Windows are evaluated stateless, exactly matching how the PPO update re-evaluates shuffled minibatches." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-cpu" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">3 LSTM actors · 64 hidden</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Decentralised</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="2" data-cap="Centralised training, decentralised execution: the critic reads all agents' observations concatenated and outputs one value estimate per agent." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-eye" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Central LSTM critic · 128 hidden</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Sees all three markets</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="3" data-cap="Clipped-ratio policy loss with an entropy bonus; advantages normalised, gradients clipped at 0.5, and rewards expressed as a fraction of each agent's $10k book so rewards, values and returns share one scale." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-refresh" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">PPO update · clip 0.2</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">GAE λ 0.95 · γ 0.99</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+            <div data-layer="4" data-cap="Walk-forward folds retrain from scratch and keep the best-on-validation checkpoint — the one the live crypto desk loads to trade BTC and ETH on Alpaca." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-arrows-exchange" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+              <div style="min-width:0">
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Actions: hold · buy · sell</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Executed on Alpaca</div>
+              </div>
+              <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
+            </div>
+              </div>
+            </div>
+            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">Each agent sees a 20-step window of 14 features for its own pair only.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="flow" data-screen-label="Flow" style="position:relative;z-index:4;padding:clamp(70px,10vh,120px) clamp(18px,4vw,54px);border-top:1px solid #1F2A24">
+    <div style="max-width:1180px;margin:0 auto">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 04 — How to run it</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 10px">One command, then follow the wire.</h2>
+      <p style="max-width:660px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The whole lab runs as one application at one address. The desks are not independent, though: a few of them hand their work to each other, and that hand-off chain decides which tabs the sidebar will even let you open.</p>
+
+
+      <div data-flow="" style="margin-top:42px;border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(170deg,#0F1512,#0C110F);padding:clamp(20px,3vw,30px)">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px">
+          <i class="ti ti-route" style="font-size:18px;color:#3AC493"></i>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:clamp(21px,2.5vw,28px);color:#E9EEEB">Desk dependency map</div>
+          <button data-flow-play="" style="margin-left:auto;display:flex;align-items:center;gap:8px;border:1px solid #1D9E75;border-radius:8px;background:rgba(29,158,117,.08);color:#3AC493;font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;padding:8px 14px;cursor:pointer">
+            <i class="ti ti-player-pause" data-flow-icon="" style="font-size:13px"></i><span data-flow-playlabel="">Pause tour</span>
+          </button>
+        </div>
+
+        <div data-flow-steps="" style="display:flex;flex-wrap:wrap;gap:10px">
+
+          <button data-step="0" style="flex:1;min-width:150px;text-align:left;border:1px solid #1F2A24;border-radius:10px;background:#0F1512;padding:11px 13px;cursor:pointer;transition:border-color .3s,background .3s">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Step 01</div>
+            <div data-step-label="" style="font-family:'DM Sans',sans-serif;font-size:13.5px;color:#93A49B;margin-top:5px;transition:color .3s">Screen the pairs</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:#4A5A52;margin-top:4px">known_pair_trading</div>
+          </button>
+
+          <button data-step="1" style="flex:1;min-width:150px;text-align:left;border:1px solid #1F2A24;border-radius:10px;background:#0F1512;padding:11px 13px;cursor:pointer;transition:border-color .3s,background .3s">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Step 02</div>
+            <div data-step-label="" style="font-family:'DM Sans',sans-serif;font-size:13.5px;color:#93A49B;margin-top:5px;transition:color .3s">Side inputs</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:#4A5A52;margin-top:4px">letf · OTC_Track</div>
+          </button>
+
+          <button data-step="2" style="flex:1;min-width:150px;text-align:left;border:1px solid #1F2A24;border-radius:10px;background:#0F1512;padding:11px 13px;cursor:pointer;transition:border-color .3s,background .3s">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Step 03</div>
+            <div data-step-label="" style="font-family:'DM Sans',sans-serif;font-size:13.5px;color:#93A49B;margin-top:5px;transition:color .3s">Fundamental verdict</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:#4A5A52;margin-top:4px">fundamental.py</div>
+          </button>
+
+          <button data-step="3" style="flex:1;min-width:150px;text-align:left;border:1px solid #1F2A24;border-radius:10px;background:#0F1512;padding:11px 13px;cursor:pointer;transition:border-color .3s,background .3s">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Step 04</div>
+            <div data-step-label="" style="font-family:'DM Sans',sans-serif;font-size:13.5px;color:#93A49B;margin-top:5px;transition:color .3s">The hub gates it</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:#4A5A52;margin-top:4px">/api/status</div>
+          </button>
+
+          <button data-step="4" style="flex:1;min-width:150px;text-align:left;border:1px solid #1F2A24;border-radius:10px;background:#0F1512;padding:11px 13px;cursor:pointer;transition:border-color .3s,background .3s">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Step 05</div>
+            <div data-step-label="" style="font-family:'DM Sans',sans-serif;font-size:13.5px;color:#93A49B;margin-top:5px;transition:color .3s">Trade the verdict</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:#4A5A52;margin-top:4px">spread desks</div>
+          </button>
+        </div>
+        <div style="margin-top:12px;height:2px;background:#1A231E;border-radius:2px;overflow:hidden">
+          <div data-flow-bar="" style="height:100%;width:0%;background:linear-gradient(90deg,#1D9E75,#3AC493);transition:width .5s linear"></div>
+        </div>
+        <div data-flow-caption="" style="margin-top:14px;min-height:42px;font-size:13.5px;line-height:1.6;color:#93A49B;max-width:820px;transition:opacity .3s">The pair-trading desk screens cointegrated candidates and writes the chosen two legs to <code style="font-family:'DM Mono',monospace;color:#C9D2CD">pair.txt</code>, clearing the downstream flags so nothing stale survives.</div>
+
+        <div data-flow-canvas="" style="position:relative;margin-top:26px">
+          <svg data-flow-svg="" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0"></svg>
+          <div data-flow-grid="" style="position:relative;z-index:1;display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:16px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#5F6F66;padding-bottom:2px">01 · Run</div>
+
+        <div data-node="pair" style="position:relative;z-index:1;border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
+          <div style="display:flex;align-items:center;gap:9px">
+            <i class="ti ti-wallet" style="font-size:16px;color:#3AC493"></i>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 09</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">Pair Trading</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">known_pair_trading.py</div>
+          <p style="margin-top:8px;font-size:12px;line-height:1.55;color:#93A49B">Cointegration screen picks the two legs, then clears the stale downstream flags.</p>
+        </div>
+
+        <div data-node="letf" style="position:relative;z-index:1;border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
+          <div style="display:flex;align-items:center;gap:9px">
+            <i class="ti ti-chart-candle" style="font-size:16px;color:#3AC493"></i>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 05</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">LETF Backtest</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">letf.py</div>
+          <p style="margin-top:8px;font-size:12px;line-height:1.55;color:#93A49B">Choosing an underlying saves its leveraged triple for other desks.</p>
+        </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#5F6F66;padding-bottom:2px">Artifacts</div>
+
+        <div data-node="apair" style="position:relative;z-index:1;border:1px dashed #2C3B33;border-radius:10px;background:#0F1512;padding:12px 12px;text-align:center;transition:border-color .35s,box-shadow .35s,opacity .35s">
+          <i class="ti ti-file-description" style="font-size:14px;color:#5F6F66"></i>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;margin-top:6px;word-break:break-word">pair.txt</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#5F6F66;margin-top:5px">+ .pair_ready</div>
+        </div>
+
+        <div data-node="aetf" style="position:relative;z-index:1;border:1px dashed #2C3B33;border-radius:10px;background:#0F1512;padding:12px 12px;text-align:center;transition:border-color .35s,box-shadow .35s,opacity .35s">
+          <i class="ti ti-file-description" style="font-size:14px;color:#5F6F66"></i>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;margin-top:6px;word-break:break-word">ETF_triple.txt</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#5F6F66;margin-top:5px">underlying · bull · bear</div>
+        </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#5F6F66;padding-bottom:2px">02 · Analyse</div>
+
+        <div data-node="fund" style="position:relative;z-index:1;border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
+          <div style="display:flex;align-items:center;gap:9px">
+            <i class="ti ti-building-bank" style="font-size:16px;color:#3AC493"></i>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 01</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">Fundamental</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">fundamental.py</div>
+          <p style="margin-top:8px;font-size:12px;line-height:1.55;color:#93A49B">Reads the pair, pulls filings and ratios, and asks for an option-strategy verdict.</p>
+        </div>
+
+        <div data-node="otc" style="position:relative;z-index:1;border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
+          <div style="display:flex;align-items:center;gap:9px">
+            <i class="ti ti-eye-off" style="font-size:16px;color:#3AC493"></i>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 03</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">OTC Track</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">OTC_Track.py</div>
+          <p style="margin-top:8px;font-size:12px;line-height:1.55;color:#93A49B">Reads both files — the pair and the ETF triple — for off-exchange tape.</p>
+        </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#5F6F66;padding-bottom:2px">03 · Gate</div>
+
+        <div data-node="areport" style="position:relative;z-index:1;border:1px dashed #2C3B33;border-radius:10px;background:#0F1512;padding:12px 12px;text-align:center;transition:border-color .35s,box-shadow .35s,opacity .35s">
+          <i class="ti ti-file-description" style="font-size:14px;color:#5F6F66"></i>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;margin-top:6px;word-break:break-word">report_stock1.json<br>report_stock2.json</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#5F6F66;margin-top:5px">+ .fundamental_done</div>
+        </div>
+
+        <div data-node="gate" style="position:relative;z-index:1;border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
+          <div style="display:flex;align-items:center;gap:9px">
+            <i class="ti ti-lock-open" style="font-size:16px;color:#3AC493"></i>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Hub</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">strategy_tab_for()</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">main.py · /api/status</div>
+          <p style="margin-top:8px;font-size:12px;line-height:1.55;color:#93A49B">Normalises the free-form verdict to a word set and matches keyword pairs.</p>
+        </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#5F6F66;padding-bottom:2px">04 · Act</div>
+
+        <div data-node="bull" style="position:relative;z-index:1;border:1px solid #2A2417;border-radius:12px;background:#0F1512;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
+          <div style="display:flex;align-items:center;gap:9px">
+            <i class="ti ti-trending-up" style="font-size:16px;color:#C9A961"></i>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 10</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">Bull Call Spread</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">bull_call_spread.py</div>
+          <p style="margin-top:8px;font-size:12px;line-height:1.55;color:#93A49B">Unsealed when the verdict contains {bull, call}. Reads pair.txt for its legs.</p>
+        </div>
+
+        <div data-node="bear" style="position:relative;z-index:1;border:1px solid #2A2417;border-radius:12px;background:#0F1512;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
+          <div style="display:flex;align-items:center;gap:9px">
+            <i class="ti ti-trending-down" style="font-size:16px;color:#C9A961"></i>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 11</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">Bear Put Spread</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">bear_put_spread.py</div>
+          <p style="margin-top:8px;font-size:12px;line-height:1.55;color:#93A49B">Unsealed when the verdict contains {bear, put}. Both legs bearish → only this one opens.</p>
+        </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:26px;padding-top:18px;border-top:1px solid #1F2A24;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+          <div style="display:flex;align-items:center;gap:9px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66"><span style="width:22px;height:2px;background:#3AC493"></span>writes</div>
+          <div style="display:flex;align-items:center;gap:9px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66"><span style="width:22px;height:0;border-top:2px dashed #5F6F66"></span>reads</div>
+          <div style="display:flex;align-items:center;gap:9px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66"><span style="width:9px;height:9px;border:1px dashed #2C3B33;border-radius:2px"></span>file on disk</div>
+          <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:#4A5A52">Click any desk to isolate its dependencies</div>
+        </div>
+      </div>
+
+      <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px">
+        <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:18px 20px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">Standalone desks</div>
+          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">Five desks depend on nothing but their own feeds — open them in any order.</p>
+          <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:7px;font-family:'DM Mono',monospace;font-size:10.5px;color:#93A49B">
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">02 Macro Research</span>
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">04 Forex</span>
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">06 Crypto</span>
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">07 Prediction Markets</span>
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">08 Treasuries</span>
+          </div>
+        </div>
+        <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:18px 20px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">Re-running the chain</div>
+          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">Pick a new pair and the hub notices on its own: both spread desks re-seal and wait for a fresh verdict. A half-written or malformed report is simply skipped — the next check picks it up.</p>
+        </div>
+        <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:18px 20px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">While you work</div>
+          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">Live account balances and open positions stream in from OANDA and Alpaca, feeding the dashboard's sparklines and blotters — entirely independent of the chain above.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" data-screen-label="About" style="position:relative;z-index:4;padding:clamp(70px,10vh,120px) clamp(18px,4vw,54px);border-top:1px solid #1F2A24;background:linear-gradient(180deg,#0E1512,#0C110F)">
+    <div style="max-width:1180px;margin:0 auto">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 05 — The author</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(28px,5vw,70px);margin-top:16px;align-items:start">
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(38px,5.4vw,68px);line-height:1;letter-spacing:-.02em">Tobi Bui</h2>
+          <p style="margin-top:18px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Master of Financial Mathematics candidate at NC State, with a Computer Science and Economics background from Oberlin. I build the whole chain — data acquisition, model, optimisation, execution and the interface someone actually trades from.</p>
+          <div style="margin-top:26px;display:flex;flex-direction:column;gap:14px">
+            <div style="border-left:2px solid #1D9E75;padding-left:16px">
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:#E9EEEB">North Carolina State University</div>
+              <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#93A49B;margin-top:5px">M.S. Financial Mathematics · Dec 2026 · GPA 4.0</div>
+            </div>
+            <div style="border-left:2px solid #26332C;padding-left:16px">
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:#E9EEEB">Oberlin College</div>
+              <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#93A49B;margin-top:5px">B.A. Computer Science &amp; Economics · May 2025 · GPA 3.6</div>
+            </div>
+          </div>
+          <div style="margin-top:26px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">Coursework</div>
+            <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:7px">
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 9px">Options &amp; Derivatives Pricing</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 9px">Fixed Income Products</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 9px">Linear Optimization</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 9px">Statistical Inference</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 9px">ML in Finance</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 9px">Bayesian Computation</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 9px">Akuna Capital Options 101</span>
+            </div>
+          </div>
+          <div style="margin-top:22px">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">Toolkit</div>
+            <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:7px">
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">Python</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">PyTorch</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">TensorFlow</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">scikit-learn</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">Pandas · NumPy</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">Gurobi</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">R</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">SQL · DuckDB</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">MongoDB</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">Bloomberg Terminal</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">Tableau · Power BI</span>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#C9D2CD;border:1px solid #26332C;border-radius:5px;padding:5px 9px;background:#131B16">SAS · Linux</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">Selected work</div>
+          <article data-tilt="" style="border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:20px 22px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:21px;color:#E9EEEB">Quant Trading Platform</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">12/2023 — present</div>
+            </div>
+            <p style="margin-top:10px;font-size:13.5px;line-height:1.65;color:#93A49B">Pair trading with a Kalman filter and Prophet forecasts, ~20% modelled return in backtest. MPT's convex QP linearised through Gurobi and skfolio for portfolio optimisation — a 15% profit improvement, stored in DuckDB. SEC EDGAR requests automate the equity-options analysis.</p>
+            <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66"><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">PyTorch</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">Gurobi</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">Alpaca</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">DuckDB</span></div>
+          </article>
+          <article data-tilt="" style="border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:20px 22px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:21px;color:#E9EEEB">MBS Credit Risk &amp; Trading</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">08/2025 — 12/2025</div>
+            </div>
+            <p style="margin-top:10px;font-size:13.5px;line-height:1.65;color:#93A49B">Cash-flow modelling and pricing under stochastic scenarios: logistic regression and Cox models for default, PSA and Vasicek for prepayment, Monte Carlo for valuation — wrapped in a backtestable trading platform.</p>
+            <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66"><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">StochPy</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">scikit-learn</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">Monte Carlo</span></div>
+          </article>
+          <article data-tilt="" style="border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:20px 22px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:21px;color:#E9EEEB">Corporate Spread Prediction</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">02/2025 — 05/2025</div>
+            </div>
+            <p style="margin-top:10px;font-size:13.5px;line-height:1.65;color:#93A49B">A feedforward network on FRED data reaching R² ≈ 0.7 on corporate bond spreads, with VIF screening, Kalman filtering and Yeo-Johnson transforms upstream, and weighted least squares to keep the fit economically realistic.</p>
+            <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66"><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">PyTorch</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">Statsmodels</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">FRED API</span></div>
+          </article>
+
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66;margin-top:12px">Experience</div>
+          <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:20px 22px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:#E9EEEB">Research Assistant · Oberlin College</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">06/2024 — 05/2025</div>
+            </div>
+            <p style="margin-top:10px;font-size:13.5px;line-height:1.65;color:#93A49B">Survival models for patient outcomes at a 0.75 C-index — Cox regression, log-rank tests, Mahalanobis matching to cut selection bias, ATE and SMD diagnostics. Presented at the Penn Conference on Big Data in Biomedical and Population Health Sciences as the only undergraduate.</p>
+          </div>
+          <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:20px 22px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:#E9EEEB">ML Engineer Intern · VinBigData</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">05/2023 — 08/2023</div>
+            </div>
+            <p style="margin-top:10px;font-size:13.5px;line-height:1.65;color:#93A49B">Built a crawler across 100+ sources to train Vivi, VinFast's assistant, and fine-tuned MT5-small for Vietnamese Q&amp;A and summarisation — 50% better accuracy, 30% more efficient, 15% less GPU draw.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer data-screen-label="Contact" style="position:relative;z-index:4;padding:clamp(60px,9vh,110px) clamp(18px,4vw,54px) 54px;border-top:1px solid #1F2A24;background:#0C110F">
+    <div style="max-width:1180px;margin:0 auto">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);gap:36px;align-items:end">
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(32px,4.4vw,54px);line-height:1.05;letter-spacing:-.02em">Open the book.</h2>
+          <div style="width:88px;margin:20px 0;border-bottom:5px double #1D9E75"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px">
+            <a data-hub-link data-hub-state="closed" style="display:flex;align-items:center;gap:10px;padding:14px 26px;border-radius:9px;background:#1D9E75;color:#06130E;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="background:#3AC493"><i class="ti ti-arrow-right" style="font-size:15px"></i>Enter the Operation </a>
+            <a href="https://github.com/tobibui1904" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:9px;border:1px solid #26332C;color:#93A49B;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="border-color:#1D9E75;color:#E9EEEB"><i class="ti ti-brand-github" style="font-size:15px"></i>GitHub</a>
+            <a href="https://www.linkedin.com/in/tobi-bui-0ab754228/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:9px;border:1px solid #26332C;color:#93A49B;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="border-color:#1D9E75;color:#E9EEEB"><i class="ti ti-brand-linkedin" style="font-size:15px"></i>LinkedIn</a>
+            <a href="mailto:ntbui@ncsu.edu" style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:9px;border:1px solid #26332C;color:#93A49B;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="border-color:#1D9E75;color:#E9EEEB"><i class="ti ti-mail" style="font-size:15px"></i>ntbui@ncsu.edu</a>
+            <a href="Tobi_Bui_Resume.pdf" target="_blank" style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:9px;border:1px solid #26332C;color:#93A49B;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="border-color:#C9A961;color:#E9EEEB"><i class="ti ti-download" style="font-size:15px"></i>Résumé PDF</a>
+          </div>
+        </div>
+        <div style="text-align:right;font-family:'DM Mono',monospace;font-size:10.5px;line-height:2;color:#5F6F66">
+          <div>Raleigh, NC</div>
+          <div>(440) 506-4783</div>
+          <div>ntbui@ncsu.edu</div>
+        </div>
+      </div>
+      <div style="margin-top:44px;padding-top:20px;border-top:1px solid #1F2A24;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66">
+        <span>Quant Lab · The Ledger</span>
+        <span>Research code. Not investment advice.</span>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;pointDensity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:6000,&quot;min&quot;:400,&quot;max&quot;:6000,&quot;step&quot;:100,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;3D scene&quot;},&quot;autoRotate&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;3D scene&quot;},&quot;terrainWave&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;3D scene&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() {
+    this._cleanups = [];
+    this.initReveal();
+    this.initTilt();
+    this.initStack();
+    this.initFlow();
+    this.initModel();
+    this.initScene();
+  }
+  componentWillUnmount() { (this._cleanups || []).forEach(f => { try { f(); } catch (e) {} }); }
+  root() { return this.el || document; }
+
+  initReveal() {
+    const nodes = Array.from(document.querySelectorAll('section, footer'));
+    if (!('IntersectionObserver' in window)) return;
+    nodes.forEach((n, i) => {
+      if (i === 0) return;
+      n.style.opacity = '0';
+      n.style.transform = 'translateY(26px)';
+      n.style.transition = 'opacity .7s cubic-bezier(.22,.8,.3,1), transform .7s cubic-bezier(.22,.8,.3,1)';
+    });
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'none';
+          io.unobserve(e.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.06 });
+    nodes.forEach((n, i) => { if (i > 0) io.observe(n); });
+    this._cleanups.push(() => io.disconnect());
+  }
+
+  initTilt() {
+    const cards = Array.from(document.querySelectorAll('[data-tilt]'));
+    cards.forEach(card => {
+      const enter = () => { card.style.borderColor = '#1D9E75'; card.style.boxShadow = '0 26px 60px -30px rgba(29,158,117,.55)'; };
+      const move = ev => {
+        const r = card.getBoundingClientRect();
+        const px = (ev.clientX - r.left) / r.width - 0.5;
+        const py = (ev.clientY - r.top) / r.height - 0.5;
+        card.style.transform = 'perspective(900px) rotateY(' + (px * 9).toFixed(2) + 'deg) rotateX(' + (-py * 9).toFixed(2) + 'deg) translateZ(14px)';
+        card.style.background = 'radial-gradient(520px circle at ' + ((px + 0.5) * 100).toFixed(1) + '% ' + ((py + 0.5) * 100).toFixed(1) + '%, rgba(29,158,117,.10), #111814 55%)';
+      };
+      const leave = () => {
+        card.style.transform = 'none';
+        card.style.borderColor = '';
+        card.style.boxShadow = '';
+        card.style.background = '';
+        card.style.transition = 'transform .5s cubic-bezier(.22,.8,.3,1), border-color .25s, box-shadow .25s';
+      };
+      const down = () => { card.style.transition = 'transform .08s'; };
+      card.addEventListener('mouseenter', () => { card.style.transition = 'transform .12s, border-color .25s, box-shadow .25s'; enter(); });
+      card.addEventListener('mousemove', move);
+      card.addEventListener('mouseleave', leave);
+      card.addEventListener('mousedown', down);
+      this._cleanups.push(() => { card.removeEventListener('mousemove', move); card.removeEventListener('mouseleave', leave); });
+    });
+  }
+
+  initStack() {
+    const wrap = document.querySelector('[data-ql-stack]');
+    const inner = document.querySelector('[data-ql-stack-inner]');
+    if (!wrap || !inner) return;
+    const sheets = Array.from(document.querySelectorAll('[data-ql-sheet]'));
+    let mx = 0, my = 0;
+    const apply = () => {
+      const r = wrap.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      // 0 → 1 as the block travels through the viewport
+      let p = 1 - (r.top - vh * 0.15) / (vh * 0.75);
+      p = Math.max(0, Math.min(1, p));
+      const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      inner.style.transform = 'rotateX(' + (58 - ease * 6 + my * 6).toFixed(2) + 'deg) rotateZ(' + (-40 + ease * 4 + mx * 6).toFixed(2) + 'deg)';
+      sheets.forEach((s, i) => {
+        const lift = ease * (i * 86);
+        const fan = ease * (i * 9);
+        s.style.transform = 'translateZ(' + lift.toFixed(1) + 'px) translate(' + fan.toFixed(1) + 'px,' + (-fan).toFixed(1) + 'px)';
+        s.style.opacity = String(0.35 + 0.65 * Math.min(1, ease * 1.4 + i * 0.05));
+      });
+    };
+    const onScroll = () => { window.requestAnimationFrame(apply); };
+    const onMouse = ev => {
+      mx = (ev.clientX / window.innerWidth - 0.5);
+      my = (ev.clientY / window.innerHeight - 0.5);
+      window.requestAnimationFrame(apply);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('mousemove', onMouse, { passive: true });
+    apply();
+    this._cleanups.push(() => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      window.removeEventListener('mousemove', onMouse);
+    });
+  }
+
+  initModel() {
+    document.querySelectorAll('[data-model3d]').forEach(card => {
+      const stack = card.querySelector('[data-model-stack]');
+      const cap = card.querySelector('[data-model-caption]');
+      if (!stack) return;
+      const layers = Array.from(stack.querySelectorAll('[data-layer]'));
+      let hovered = -1, pulse = 0, rx = 16, ry = -13;
+
+      const paint = active => {
+        layers.forEach((el, i) => {
+          const on = i === active;
+          el.style.transform = 'translateZ(' + (i * 16 + (on ? 52 : 0)) + 'px)' + (on ? ' scale(1.025)' : '');
+          el.style.borderColor = on ? '#1D9E75' : '#223029';
+          el.style.boxShadow = on ? '0 26px 50px -22px rgba(29,158,117,.75)' : '0 18px 34px -24px rgba(0,0,0,.95)';
+          const dot = el.querySelector('[data-layer-dot]');
+          if (dot) {
+            dot.style.background = on ? '#3AC493' : '#26332C';
+            dot.style.boxShadow = on ? '0 0 8px rgba(58,196,147,.8)' : 'none';
+          }
+        });
+        const text = layers[active] && layers[active].getAttribute('data-cap');
+        if (cap && text) {
+          cap.style.opacity = '0';
+          setTimeout(() => { cap.textContent = text; cap.style.opacity = '1'; }, 140);
+        }
+      };
+
+      const tilt = () => { stack.style.transform = 'rotateX(' + rx.toFixed(1) + 'deg) rotateY(' + ry.toFixed(1) + 'deg)'; };
+      const onMove = ev => {
+        const r = card.getBoundingClientRect();
+        rx = 16 - ((ev.clientY - r.top) / r.height - 0.5) * 18;
+        ry = -13 + ((ev.clientX - r.left) / r.width - 0.5) * 26;
+        tilt();
+      };
+      const onLeave = () => { rx = 16; ry = -13; tilt(); hovered = -1; };
+
+      card.addEventListener('mousemove', onMove);
+      card.addEventListener('mouseleave', onLeave);
+      layers.forEach((el, i) => {
+        el.addEventListener('mouseenter', () => { hovered = i; paint(i); });
+      });
+
+      const timer = setInterval(() => {
+        if (hovered >= 0) return;
+        pulse = (pulse + 1) % layers.length;
+        paint(pulse);
+      }, 2200);
+      paint(0);
+
+      this._cleanups.push(() => {
+        clearInterval(timer);
+        card.removeEventListener('mousemove', onMove);
+        card.removeEventListener('mouseleave', onLeave);
+      });
+    });
+  }
+
+  initFlow() {
+    const wrap = document.querySelector('[data-flow]');
+    const canvas = document.querySelector('[data-flow-canvas]');
+    const svg = document.querySelector('[data-flow-svg]');
+    if (!wrap || !canvas || !svg) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const N = id => canvas.querySelector('[data-node="' + id + '"]');
+
+    const EDGES = [
+      { id: 'e1', from: 'pair', to: 'apair', kind: 'w', label: 'writes' },
+      { id: 'e2', from: 'apair', to: 'fund', kind: 'r', label: 'reads' },
+      { id: 'e3', from: 'apair', to: 'otc', kind: 'r' },
+      { id: 'e4', from: 'letf', to: 'aetf', kind: 'w' },
+      { id: 'e5', from: 'aetf', to: 'otc', kind: 'r' },
+      { id: 'e6', from: 'fund', to: 'areport', kind: 'w', label: 'writes' },
+      { id: 'e7', from: 'areport', to: 'gate', kind: 'r', label: 'poll' },
+      { id: 'e8', from: 'gate', to: 'bull', kind: 'g', label: '{bull, call}' },
+      { id: 'e9', from: 'gate', to: 'bear', kind: 'g', label: '{bear, put}' }
+    ];
+
+    const STEPS = [
+      {
+        nodes: ['pair', 'apair'], edges: ['e1'],
+        caption: 'The pair-trading desk screens cointegrated candidates and writes the chosen two legs to <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">pair.txt</code>, then touches <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">.pair_ready</code> and clears the old verdict flag so nothing stale survives.'
+      },
+      {
+        nodes: ['letf', 'aetf', 'apair', 'otc'], edges: ['e4', 'e5', 'e3'],
+        caption: 'Two side inputs feed the tape desk: the LETF notebook saves its chosen leveraged triple to <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">ETF_triple.txt</code>, and OTC Track reads that alongside the pair for short volume and dark-pool prints.'
+      },
+      {
+        nodes: ['apair', 'fund', 'areport'], edges: ['e2', 'e6'],
+        caption: 'The fundamental desk reads the pair, pulls filings and ratios for both legs, and writes a report per leg — each carrying a free-form option-strategy verdict — before touching <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">.fundamental_done</code>.'
+      },
+      {
+        nodes: ['areport', 'gate'], edges: ['e7'],
+        caption: 'The hub polls <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">/api/status</code>. Reports are only trusted once the done-flag exists; then <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">strategy_tab_for()</code> normalises each verdict to a word set and matches keyword pairs.'
+      },
+      {
+        nodes: ['gate', 'bull', 'bear'], edges: ['e8', 'e9'],
+        caption: 'Only the recommended desks unseal. Both legs bearish → the bear put spread alone. One of each → both open. Each spread notebook reads <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">pair.txt</code> again for its own legs.'
+      }
+    ];
+
+    // Labels ride on their own layer above the cards so they are never clipped
+    const labelSvg = document.createElementNS(NS, 'svg');
+    labelSvg.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:2');
+    canvas.appendChild(labelSvg);
+
+    const paths = {}, labels = {}, labelBgs = {};
+    EDGES.forEach(e => {
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke-width', '1.6');
+      p.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(p);
+      paths[e.id] = p;
+      if (e.label) {
+        const bg = document.createElementNS(NS, 'rect');
+        bg.setAttribute('rx', '4');
+        bg.setAttribute('fill', '#0C110F');
+        bg.setAttribute('stroke', '#1F2A24');
+        labelSvg.appendChild(bg);
+        labelBgs[e.id] = bg;
+        const t = document.createElementNS(NS, 'text');
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('dominant-baseline', 'middle');
+        t.setAttribute('font-family', 'DM Mono, monospace');
+        t.setAttribute('font-size', '9');
+        t.textContent = e.label;
+        labelSvg.appendChild(t);
+        labels[e.id] = t;
+      }
+    });
+
+    const grid = canvas.querySelector('[data-flow-grid]');
+    const layout = () => {
+      if (!grid) return;
+      const w = canvas.clientWidth || 0;
+      // A 4-then-1 wrap would break the left-to-right reading order, so the
+      // pipeline is either five full lanes or a single stacked column.
+      // 5 × 130px tracks + 4 × 92px gutters ≈ 1018px — below that, stack
+      const stack = w < 1020;
+      grid.style.gridTemplateColumns = stack ? '1fr' : 'repeat(5,minmax(130px,1fr))';
+      grid.style.rowGap = '16px';
+      // gutters sized for the widest edge label ("{bull, call}" ≈ 80px) so a
+      // chip always sits clear of the cards on either side of it
+      grid.style.columnGap = stack ? '16px' : '92px';
+      grid.style.paddingRight = stack ? '124px' : '0px';
+    };
+
+    const draw = () => {
+      layout();
+      const base = canvas.getBoundingClientRect();
+      const cw = canvas.clientWidth || base.width;
+      const stacked = cw < 1020;
+      EDGES.forEach((e, i) => {
+        const A = N(e.from), B = N(e.to), p = paths[e.id];
+        if (!A || !B) { p.setAttribute('d', ''); return; }
+        const ra = A.getBoundingClientRect(), rb = B.getBoundingClientRect();
+        let lx, ly;
+        if (!stacked) {
+          const x1 = ra.right - base.left, y1 = ra.top + ra.height / 2 - base.top;
+          const x2 = rb.left - base.left,  y2 = rb.top + rb.height / 2 - base.top;
+          const dx = Math.max(26, (x2 - x1) * 0.55);
+          p.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 + ' ' + (x2 - dx) + ',' + y2 + ' ' + x2 + ',' + y2);
+          lx = (x1 + x2) / 2; ly = (y1 + y2) / 2 - 9;
+        } else {
+          // side rail: out of the source, down a dedicated lane, back into the
+          // target — so an edge never crosses a card it merely skips over
+          const rail = cw - 84 + (i % 3) * 22;
+          const x1 = ra.right - base.left, y1 = ra.bottom - base.top - 18;
+          const x2 = rb.right - base.left, y2 = rb.top - base.top + 18;
+          const r = 9, dn = y2 > y1 ? 1 : -1;
+          p.setAttribute('d',
+            'M' + x1 + ',' + y1 +
+            ' L' + (rail - r) + ',' + y1 +
+            ' Q' + rail + ',' + y1 + ' ' + rail + ',' + (y1 + r * dn) +
+            ' L' + rail + ',' + (y2 - r * dn) +
+            ' Q' + rail + ',' + y2 + ' ' + (rail - r) + ',' + y2 +
+            ' L' + x2 + ',' + y2);
+          lx = rail; ly = (y1 + y2) / 2;
+        }
+        const t = labels[e.id];
+        if (t) {
+          const bw = (e.label.length * 5.6) + 12, bh = 15;
+          t.setAttribute('x', lx); t.setAttribute('y', ly);
+          const bg = labelBgs[e.id];
+          bg.setAttribute('x', lx - bw / 2); bg.setAttribute('y', ly - bh / 2);
+          bg.setAttribute('width', bw); bg.setAttribute('height', bh);
+        }
+      });
+    };
+
+    const paint = (activeNodes, activeEdges, dim) => {
+      EDGES.forEach(e => {
+        const p = paths[e.id], on = activeEdges.indexOf(e.id) >= 0;
+        p.setAttribute('stroke', on ? (e.kind === 'g' ? '#C9A961' : '#3AC493') : '#26332C');
+        p.setAttribute('stroke-dasharray', e.kind === 'r' ? '5 6' : (on ? '9 7' : '0'));
+        p.setAttribute('opacity', on ? '1' : (dim ? '.28' : '.55'));
+        p.style.animation = on ? 'qlFlow 1.1s linear infinite' : 'none';
+        p.style.filter = on ? 'drop-shadow(0 0 6px rgba(58,196,147,.55))' : 'none';
+        p.setAttribute('stroke-width', on ? '2.1' : '1.4');
+        const t = labels[e.id];
+        if (t) {
+          t.setAttribute('fill', on ? '#E9EEEB' : '#5F6F66');
+          t.setAttribute('opacity', on ? '1' : '.75');
+          const bg = labelBgs[e.id];
+          bg.setAttribute('stroke', on ? (e.kind === 'g' ? '#C9A961' : '#1D9E75') : '#1F2A24');
+          bg.setAttribute('opacity', on ? '1' : '.8');
+        }
+      });
+      ['pair', 'letf', 'apair', 'aetf', 'fund', 'otc', 'areport', 'gate', 'bull', 'bear'].forEach(id => {
+        const el = N(id); if (!el) return;
+        const on = activeNodes.indexOf(id) >= 0;
+        const gold = id === 'bull' || id === 'bear';
+        const accent = gold ? '#C9A961' : '#3AC493';
+        const isArtifact = id === 'apair' || id === 'aetf' || id === 'areport';
+        el.style.borderColor = on ? accent : (gold ? '#2A2417' : (isArtifact ? '#2C3B33' : '#1F2A24'));
+        el.style.boxShadow = on ? '0 0 0 1px ' + accent + '55, 0 18px 44px -22px ' + accent + 'cc' : 'none';
+        el.style.transform = on ? 'translateY(-3px)' : 'none';
+        el.style.opacity = on ? '1' : (dim ? '.42' : '1');
+      });
+    };
+
+    let idx = 0, playing = true, timer = 0, focus = null;
+    const stepBtns = Array.from(wrap.querySelectorAll('[data-step]'));
+    const bar = wrap.querySelector('[data-flow-bar]');
+    const cap = wrap.querySelector('[data-flow-caption]');
+    const playBtn = wrap.querySelector('[data-flow-play]');
+    const playIcon = wrap.querySelector('[data-flow-icon]');
+    const playLabel = wrap.querySelector('[data-flow-playlabel]');
+
+    const show = i => {
+      idx = (i + STEPS.length) % STEPS.length;
+      focus = null;
+      const s = STEPS[idx];
+      paint(s.nodes, s.edges, true);
+      if (cap) { cap.style.opacity = '0'; setTimeout(() => { cap.innerHTML = s.caption; cap.style.opacity = '1'; }, 160); }
+      if (bar) bar.style.width = ((idx + 1) / STEPS.length * 100) + '%';
+      stepBtns.forEach((b, j) => {
+        const on = j === idx;
+        b.style.borderColor = on ? '#1D9E75' : '#1F2A24';
+        b.style.background = on ? 'linear-gradient(140deg,rgba(29,158,117,.12),transparent)' : '#0F1512';
+        const lab = b.querySelector('[data-step-label]');
+        if (lab) lab.style.color = on ? '#E9EEEB' : '#93A49B';
+      });
+    };
+
+    const setPlaying = v => {
+      playing = v;
+      if (playIcon) playIcon.className = 'ti ' + (v ? 'ti-player-pause' : 'ti-player-play');
+      if (playLabel) playLabel.textContent = v ? 'Pause tour' : 'Play tour';
+    };
+
+    timer = setInterval(() => { if (playing && !focus) show(idx + 1); }, 3400);
+    stepBtns.forEach((b, j) => b.addEventListener('click', () => { setPlaying(false); show(j); }));
+    if (playBtn) playBtn.addEventListener('click', () => setPlaying(!playing));
+
+    // Click a desk to isolate everything it touches
+    canvas.querySelectorAll('[data-node]').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-node');
+        if (focus === id) { focus = null; show(idx); return; }
+        setPlaying(false);
+        focus = id;
+        const es = EDGES.filter(e => e.from === id || e.to === id);
+        const ns = [id];
+        es.forEach(e => { ns.push(e.from); ns.push(e.to); });
+        paint(ns, es.map(e => e.id), true);
+        if (cap) cap.innerHTML = 'Isolated <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">' + id + '</code> — every file it reads or writes is lit. Click it again to return to the tour.';
+      });
+    });
+
+    const redraw = () => window.requestAnimationFrame(draw);
+    window.addEventListener('resize', redraw);
+    let ro = null;
+    if ('ResizeObserver' in window) { ro = new ResizeObserver(redraw); ro.observe(canvas); }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+    setTimeout(redraw, 120);
+    draw();
+    show(0);
+
+    this._cleanups.push(() => {
+      clearInterval(timer);
+      window.removeEventListener('resize', redraw);
+      if (ro) ro.disconnect();
+    });
+  }
+
+  async initScene() {
+    const canvas = document.querySelector('[data-ql-canvas]');
+    if (!canvas) return;
+    let THREE;
+    try { THREE = await import('https://esm.sh/three@0.160.0'); }
+    catch (e) { return this.fallbackScene(canvas); }
+    if (!THREE || !THREE.Scene) return this.fallbackScene(canvas);
+
+    const density = Math.max(400, Math.min(6000, this.props.pointDensity ?? 2600));
+    const autorotate = this.props.autoRotate ?? true;
+    const waves = this.props.terrainWave ?? true;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0C110F, 0.055);
+    const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 120);
+    camera.position.set(0, 3.4, 15);
+
+    const world = new THREE.Group();
+    scene.add(world);
+
+    // Point cloud: a spiral of "prints" through price/time, tinted green→gold by height
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(density * 3);
+    const col = new Float32Array(density * 3);
+    const seed = [];
+    const cGreen = new THREE.Color(0x1D9E75), cMint = new THREE.Color(0x7FE0BD), cGold = new THREE.Color(0xC9A961);
+    for (let i = 0; i < density; i++) {
+      const t = i / density;
+      const ang = t * Math.PI * 26 + Math.random() * 0.5;
+      const rad = 2.2 + t * 9.5 + (Math.random() - 0.5) * 1.5;
+      const y = (Math.random() - 0.45) * 6.5 + Math.sin(t * 12) * 1.1;
+      pos[i * 3] = Math.cos(ang) * rad;
+      pos[i * 3 + 1] = y;
+      pos[i * 3 + 2] = Math.sin(ang) * rad;
+      seed.push(Math.random() * Math.PI * 2);
+      const c = y > 1.6 ? cGold : (Math.random() > 0.72 ? cMint : cGreen);
+      const k = 0.45 + Math.random() * 0.55;
+      col[i * 3] = c.r * k; col[i * 3 + 1] = c.g * k; col[i * 3 + 2] = c.b * k;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const points = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 0.062, vertexColors: true, transparent: true, opacity: 0.95,
+      depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true
+    }));
+    world.add(points);
+
+    // Depth-layered terrain grid beneath the cloud
+    const SEG = 46, SPAN = 34;
+    const tGeo = new THREE.PlaneGeometry(SPAN, SPAN, SEG, SEG);
+    tGeo.rotateX(-Math.PI / 2);
+    const terrain = new THREE.LineSegments(
+      new THREE.WireframeGeometry(tGeo),
+      new THREE.LineBasicMaterial({ color: 0x1D9E75, transparent: true, opacity: 0.16 })
+    );
+    terrain.position.y = -5.2;
+    world.add(terrain);
+    const basePos = tGeo.attributes.position.array.slice();
+
+    let raf = 0, mx = 0, my = 0, t0 = performance.now(), running = true;
+    const resize = () => {
+      const w = canvas.clientWidth || window.innerWidth;
+      const h = canvas.clientHeight || window.innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / Math.max(1, h);
+      camera.updateProjectionMatrix();
+    };
+    const onMove = ev => { mx = ev.clientX / window.innerWidth - 0.5; my = ev.clientY / window.innerHeight - 0.5; };
+
+    const tick = () => {
+      if (!running) return;
+      const t = (performance.now() - t0) / 1000;
+      if (autorotate) world.rotation.y = t * 0.055;
+      world.rotation.x = -0.06 + my * 0.14;
+      camera.position.x += (mx * 3.2 - camera.position.x) * 0.045;
+      camera.position.y += (3.4 - my * 2.2 - camera.position.y) * 0.045;
+      camera.lookAt(0, 0, 0);
+      const p = geo.attributes.position.array;
+      for (let i = 0; i < density; i++) {
+        p[i * 3 + 1] += Math.sin(t * 0.9 + seed[i]) * 0.0022;
+      }
+      geo.attributes.position.needsUpdate = true;
+      if (waves) {
+        const q = tGeo.attributes.position.array;
+        for (let i = 0; i < q.length; i += 3) {
+          const x = basePos[i], z = basePos[i + 2];
+          q[i + 1] = Math.sin(x * 0.28 + t * 0.75) * 0.5 + Math.cos(z * 0.22 - t * 0.55) * 0.45;
+        }
+        tGeo.attributes.position.needsUpdate = true;
+        terrain.geometry.dispose();
+        terrain.geometry = new THREE.WireframeGeometry(tGeo);
+      }
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(tick);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', onMove, { passive: true });
+    tick();
+    this._cleanups.push(() => {
+      running = false; cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', onMove);
+      renderer.dispose();
+    });
+  }
+
+  // 2D canvas fallback if the WebGL module can't load
+  fallbackScene(canvas) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let raf = 0, running = true;
+    const pts = Array.from({ length: 420 }, () => ({
+      a: Math.random() * Math.PI * 2, r: 0.1 + Math.random() * 0.9,
+      y: Math.random() - 0.5, s: 0.4 + Math.random() * 0.8
+    }));
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    const draw = () => {
+      if (!running) return;
+      const w = canvas.clientWidth, h = canvas.clientHeight, t = performance.now() / 1000;
+      ctx.clearRect(0, 0, w, h);
+      pts.forEach(p => {
+        const a = p.a + t * 0.08 * p.s;
+        const x = w / 2 + Math.cos(a) * p.r * w * 0.42;
+        const y = h / 2 + Math.sin(a) * p.r * h * 0.18 + p.y * h * 0.22;
+        ctx.fillStyle = p.y > 0.28 ? 'rgba(201,169,97,.5)' : 'rgba(29,158,117,.55)';
+        ctx.fillRect(x, y, 1.6, 1.6);
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    resize(); window.addEventListener('resize', resize); draw();
+    this._cleanups.push(() => { running = false; cancelAnimationFrame(raf); window.removeEventListener('resize', resize); });
+  }
+
+  renderVals() { return {}; }
+}
+</script>
+<script src="./hub-status.js" defer></script>
+</body>
+</html>
