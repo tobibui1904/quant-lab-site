@@ -1,0 +1,103 @@
+{
+  "company": "IREN",
+  "report_date": "2026-03-31",
+  "financial_health": {
+    "rating": "Weak",
+    "confidence": "Medium",
+    "summary": "Liquidity appears solid with a current ratio above 3, but profitability is severely negative and free cash flow is deeply in the red, signaling deteriorating earnings and cash generation."
+  },
+  "key_ratios": {
+    "current_ratio": {
+      "value": 3.7222,
+      "unit": "x",
+      "interpretation": "Strong liquidity"
+    },
+    "quick_ratio": {
+      "value": 3.7222,
+      "unit": "x",
+      "interpretation": "Strong liquidity"
+    },
+    "gross_margin": {
+      "value": 72.42,
+      "unit": "%",
+      "interpretation": "High gross profitability"
+    },
+    "operating_margin": {
+      "value": -161.28,
+      "unit": "%",
+      "interpretation": "Operating loss large"
+    },
+    "net_margin": {
+      "value": -171.16,
+      "unit": "%",
+      "interpretation": "Net loss deep"
+    },
+    "return_on_assets": {
+      "value": -3.41,
+      "unit": "%",
+      "interpretation": "Negative ROA"
+    },
+    "return_on_equity": {
+      "value": -9.3,
+      "unit": "%",
+      "interpretation": "Negative ROE"
+    },
+    "debt_to_equity": {
+      "value": null,
+      "unit": "x",
+      "interpretation": "Not applicable/missing"
+    },
+    "liabilities_to_equity": {
+      "value": 1.7265,
+      "unit": "x",
+      "interpretation": "Leverage moderate"
+    },
+    "interest_coverage": {
+      "value": -15.7392,
+      "unit": "x",
+      "interpretation": "Insufficient interest coverage"
+    },
+    "asset_turnover": {
+      "value": 0.0199,
+      "unit": "x",
+      "interpretation": "Very low asset efficiency"
+    },
+    "free_cash_flow": {
+      "value": -1379831000,
+      "unit": "$",
+      "interpretation": "Negative free cash flow"
+    },
+    "fcf_period_days": {
+      "value": 273,
+      "unit": "days",
+      "interpretation": "FCF period ~9 months"
+    }
+  },
+  "trends": [
+    "Revenue fell 21.6% QoQ but rose 24.7% YoY, indicating a seasonal dip amid overall growth.",
+    "Net income plunged 59.5% QoQ and over 1,000% YoY, dragging net margin down by about 152 percentage points."
+  ],
+  "analysis": {
+    "revenue_and_earnings": "Top-line revenue has slipped sharply in the most recent quarter (-21.6% QoQ) after a year-over-year increase, while earnings have collapsed, turning a prior profit into a sizable loss (-$247.8 M). The earnings swing is driven by widening operating losses and a deterioration in non-operating income.",
+    "margins": "Gross margin remains robust at ~72%, but operating and net margins are deeply negative (-161% and -171% respectively), showing that the cost structure and non-operating expenses are overwhelming profitability.",
+    "balance_sheet": "The balance sheet shows ample current assets relative to current liabilities (current ratio 3.7x), yet total liabilities have surged to $4.6 B, and equity, while still positive, is being eroded by accumulated deficits and large convertible-debt balances.",
+    "cash_flow": "Operating cash flow is positive and growing, but massive investing outlays and negative free cash flow (-$1.38 B over 273 days) indicate that the company is burning cash to fund capital expenditures and debt repayments.",
+    "red_flags": "Continued net losses, negative free cash flow, deteriorating operating margins, and a steep rise in convertible-debt obligations constitute significant red flags.",
+    "investment_thesis": "Given the deteriorating earnings profile and cash-flow strain, the stock is a bearish play."
+  },
+  "risks": [
+    "Sustained operating losses could deplete cash reserves despite positive operating cash flow.",
+    "High leverage from convertible debt may force equity dilution or restructuring.",
+    "If revenue decline persists, margin compression will deepen, pressuring the share price further."
+  ],
+  "option_strategy": {
+    "bias": "Bearish",
+    "name": "Bear Put Spread",
+    "structure": "Buy 30-strike put, sell 20-strike put, both expiring in approximately three months (next quarter)",
+    "max_profit": "Difference between strikes ($10) minus net premium paid, multiplied by contract size",
+    "max_loss": "Net premium paid for the spread",
+    "ideal_iv_environment": "Elevated",
+    "rationale": "The company's earnings and cash-flow outlook are weakening, suggesting further downside potential. A bear put spread captures price decline while limiting risk, which is suitable when the stock may be volatile but the downside is the priority.",
+    "why_best": "A simple long put would provide upside if the stock falls sharply, but it exposes the trader to high premium cost in an already elevated IV environment. A bear put spread reduces premium outlay while still profiting from a moderate drop, and it caps loss if the stock rebounds-a key advantage over outright short positions or put spreads with wider width that dilute payoff. The spread aligns with the bearish thesis and the expected volatility without requiring precise price timing."
+  }
+}

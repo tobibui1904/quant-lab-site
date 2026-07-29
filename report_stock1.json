@@ -1,0 +1,104 @@
+{
+  "company": "WULF",
+  "report_date": "2026-03-31",
+  "financial_health": {
+    "rating": "Weak",
+    "confidence": "Medium",
+    "summary": "The company is experiencing a severe revenue contraction, massive operating and net losses, and a negative equity position. Liquidity appears marginally adequate but the balance sheet is heavily leveraged and cash burn is accelerating."
+  },
+  "key_ratios": {
+    "current_ratio": {
+      "value": 1.2023,
+      "unit": "x",
+      "interpretation": null
+    },
+    "quick_ratio": {
+      "value": 1.2016,
+      "unit": "x",
+      "interpretation": null
+    },
+    "gross_margin": {
+      "value": 60.12,
+      "unit": "%",
+      "interpretation": null
+    },
+    "operating_margin": {
+      "value": -476.72,
+      "unit": "%",
+      "interpretation": null
+    },
+    "net_margin": {
+      "value": -1257.3,
+      "unit": "%",
+      "interpretation": null
+    },
+    "return_on_assets": {
+      "value": -6.1,
+      "unit": "%",
+      "interpretation": null
+    },
+    "return_on_equity": {
+      "value": 542.86,
+      "unit": "%",
+      "interpretation": null
+    },
+    "debt_to_equity": {
+      "value": -139.2172,
+      "unit": "x",
+      "interpretation": null
+    },
+    "liabilities_to_equity": {
+      "value": -89.9587,
+      "unit": "x",
+      "interpretation": null
+    },
+    "interest_coverage": {
+      "value": -2.4175,
+      "unit": "x",
+      "interpretation": null
+    },
+    "asset_turnover": {
+      "value": 0.0049,
+      "unit": "x",
+      "interpretation": null
+    },
+    "free_cash_flow": {
+      "value": -540545000,
+      "unit": "$",
+      "interpretation": null
+    },
+    "fcf_period_days": {
+      "value": 89,
+      "unit": "days",
+      "interpretation": null
+    }
+  },
+  "trends": [
+    "Revenue fell 32.75% quarter-over-quarter, indicating a steep top-down trajectory.",
+    "Net income rose 6.02% quarter-over-quarter but remains in deep loss, with a year-over-year decline of 1,781%."
+  ],
+  "analysis": {
+    "revenue_and_earnings": "Revenue is collapsing at roughly one-third each quarter, shrinking the top line dramatically. Though net loss showed a modest quarter-over-quarter improvement, the absolute loss remains massive and is worsening year-over-year.",
+    "margins": "Gross margin stays around 60%, but operating expenses are exploding, driving operating margin to -476% and net margin to -1,257%, signaling an unsustainable cost structure.",
+    "balance_sheet": "Current assets barely exceed current liabilities (current ratio ~1.2), but equity has turned deeply negative (-$78.6m) and leverage ratios are extreme, reflecting a balance sheet on the brink of insolvency.",
+    "cash_flow": "Free cash flow is heavily negative (-$540.5m) over the most recent 89-day window, and cash balances have been eroding after a brief rebound, raising concerns about the ability to fund operations without additional financing.",
+    "red_flags": "Key red flags include the sharp revenue decline, explosive losses, negative equity, high debt burden, and ongoing cash burn that could trigger covenant breaches or bankruptcy.",
+    "investment_thesis": "The company's fundamentals are profoundly deteriorating, making a bearish outlook the most defensible stance."
+  },
+  "risks": [
+    "Continued revenue decline could exhaust remaining cash reserves.",
+    "Inability to achieve positive operating cash flow may force debt restructurings or asset sales at distressed prices.",
+    "High leverage and negative equity increase the probability of covenant breaches or bankruptcy.",
+    "Convertible debt and warrant liabilities could lead to further equity dilution if conversion is triggered."
+  ],
+  "option_strategy": {
+    "bias": "Bearish",
+    "name": "Bear Put Spread",
+    "structure": "Buy 1 $12 put and sell 1 $8 put, expiring in the next quarterly options cycle (approx. 3 months out).",
+    "max_profit": "Maximum profit equals the strike width ($4) minus the net premium paid; realized if the stock closes at or below $8 at expiry.",
+    "max_loss": "Maximum loss is the net premium paid for the spread; limited risk if the stock rallies.",
+    "ideal_iv_environment": "elevated",
+    "rationale": "Given the steep revenue contraction, massive losses, and negative equity, the stock is likely to continue down-trend. A bear put spread captures downside while limiting exposure to the high implied volatility that typically accompanies distressed equities.",
+    "why_best": "A simple long put would be more expensive in the current elevated IV environment, eroding risk-adjusted return. Credit-based strategies (e.g., bear call spread) expose the investor to unlimited loss if the stock rallies sharply, which is undesirable given the volatility of distressed stocks. The bear put spread provides defined risk, benefits from a potential sharp price decline, and aligns with the fundamentally bearish outlook."
+  }
+}
