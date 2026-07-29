@@ -1,0 +1,5 @@
+# Display-only marimo project config: puts the notebook runtime (and its
+# canvas-rendered widgets, e.g. mo.ui.dataframe's data grid) in dark mode to
+# match theme.css. No effect on any computation.
+[tool.marimo.display]
+theme = "dark"

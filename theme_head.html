@@ -1,0 +1,31 @@
+<!-- Quant Lab · shared <head> for every notebook (run mode).
+     Loads the typefaces of the house style and the Tabler icon webfont that
+     the notebooks' inline HTML already references (previously never loaded
+     inside the notebook iframes, so every <i class="ti ti-*"> rendered blank). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script>
+/* The Ledger theme is dark-only, but marimo flips its Radix color scales and
+   dark: utility styles off a "dark" class it manages on <body> from the
+   resolved display config. If that resolves to light (stale server config,
+   different user marimo.toml), callouts/admonitions keep light backgrounds
+   under our dark page — unreadable. Assert the class ourselves and re-assert
+   if marimo's theme provider rewrites body classes. Display-only. */
+(function () {
+  var apply = function () {
+    var b = document.body;
+    if (!b) return;
+    if (!b.classList.contains("dark")) b.classList.add("dark");
+    if (!b.classList.contains("dark-theme")) b.classList.add("dark-theme");
+  };
+  document.addEventListener("DOMContentLoaded", function () {
+    apply();
+    new MutationObserver(apply).observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  });
+})();
+</script>

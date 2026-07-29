@@ -1,0 +1,341 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Quant Lab · "The Ledger" — shared notebook theme
+   ────────────────────────────────────────────────────────────────────────
+   Frontend only. This file does two jobs:
+
+   1. DEFINES the design tokens the notebooks already reference in their
+      inline HTML (--color-text-primary, --color-border-tertiary,
+      --border-radius-lg, --font-mono, …). These were never defined
+      anywhere, so hairlines fell back to currentColor and radii to 0.
+      Supplying the tokens here snaps every notebook into one system.
+
+   2. RE-SKINS marimo's chrome (which is themed via CSS custom properties)
+      into the house palette: green-cast ink, ruled hairlines, serif
+      italic display — a trading ledger, set in green ink.
+
+   Palette
+     ink       #0C110F   page
+     surface   #121917   panels · cards
+     raised    #18221D   hover surfaces
+     rule      #26332C   hairlines
+     text      #E9EEEB   primary
+     slate     #93A49B   secondary
+     green     #1D9E75   heritage accent (kept from the notebooks)
+     gold      #C9A961   seals · locked · visited
+     sienna    #D8683C   bear / down
+     mint      #E1F5EE   paper chips (kept from the notebooks)
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1 · Force the dark scheme, whatever marimo's config says ─── */
+:root, html.light, html.dark {
+  color-scheme: dark;
+}
+
+/* ─── 2 · marimo core tokens (bundle defines these as light-dark() pairs;
+          declared later in <head>, so these plain :root values win) ─── */
+:root {
+  --background:            #0C110F;
+  --foreground:            #E9EEEB;
+  --muted:                 #18221D;
+  --muted-foreground:      #93A49B;
+  --popover:               #121917;
+  --popover-foreground:    #C9D2CD;
+  --card:                  #121917;
+  --card-foreground:       #C9D2CD;
+  --border:                #223029;
+  --input:                 #2C3B33;
+  --primary:               #1D9E75;
+  --primary-foreground:    #06130E;
+  --secondary:             #18221D;
+  --secondary-foreground:  #E9EEEB;
+  --accent:                #14352A;
+  --accent-foreground:     #7FE0BD;
+  --link:                  #4EC79D;
+  --link-visited:          #C9A961;
+  --base-shadow:           rgba(0, 0, 0, 0.45);
+  --base-shadow-darker:    rgba(0, 0, 0, 0.65);
+  --cm-background:         #0F1512;
+
+  /* Typefaces — the house style the notebook heroes already use */
+  --marimo-text-font:      'DM Sans', -apple-system, 'Segoe UI', sans-serif;
+  --marimo-heading-font:   'DM Serif Display', Georgia, serif;
+  --marimo-monospace-font: 'DM Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* ─── 3 · Tokens the notebooks' inline HTML references (were undefined) ─── */
+:root {
+  --color-text-primary:        #E9EEEB;
+  --color-text-secondary:      #93A49B;
+  --color-border-tertiary:     #26332C;
+  --color-background-primary:  #121917;
+  --border-radius-lg:          10px;
+  --font-mono:                 'DM Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* ─── 4 · Page ─── */
+html, body {
+  background: var(--background);
+}
+
+body {
+  font-family: var(--marimo-text-font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ledger paper: faint ruled lines down the page, like a ledger sheet.
+   Kept at ~2% so it reads as texture, not decoration. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    rgba(233, 238, 235, 0.02) 31px,
+    rgba(233, 238, 235, 0.02) 32px
+  );
+}
+
+/* ─── 5 · Prose: serif italic headings, ledger rules ─── */
+.markdown h1, .markdown h2, .markdown h3 {
+  font-family: var(--marimo-heading-font);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.markdown h1 { border-bottom: 1px solid var(--color-border-tertiary); padding-bottom: 0.35em; }
+
+.markdown code, .output-area code {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: rgba(29, 158, 117, 0.3);
+}
+
+/* ─── 6 · Outputs ─── */
+/* Light charts (matplotlib PNGs etc.) become framed paper exhibits on the
+   dark desk rather than raw white rectangles. */
+.output-area img {
+  background: #FDFDFB;
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 10px;
+  max-width: 100%;
+}
+
+/* Tabular figures read in the data face */
+.output-area table {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 7 · Chrome details ─── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2C3B33 transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── 8 · Radix color scales, pinned to their dark values ───
+   marimo colors callouts/admonitions/tags with Radix scale variables
+   (--grass-2, --blue-2, …) whose light values apply unless marimo's own
+   .dark class is on <body>. theme_head.html asserts that class, and this
+   block pins the dark values at :root as well — so a callout can never
+   render a light background under this theme, whatever the resolved
+   marimo display config says. Values are marimo's own dark-mode set. */
+:root {
+  --amber-1: #16120c;
+  --amber-10: #ffd60a;
+  --amber-11: #ffca16;
+  --amber-12: #ffe7b3;
+  --amber-2: #1d180f;
+  --amber-3: #302008;
+  --amber-4: #3f2700;
+  --amber-5: #4d3000;
+  --amber-6: #5c3d05;
+  --amber-7: #714f19;
+  --amber-8: #8f6424;
+  --amber-9: #ffc53d;
+  --blue-1: #0d1520;
+  --blue-10: #3b9eff;
+  --blue-11: #70b8ff;
+  --blue-12: #c2e6ff;
+  --blue-2: #111927;
+  --blue-3: #0d2847;
+  --blue-4: #003362;
+  --blue-5: #004074;
+  --blue-6: #104d87;
+  --blue-7: #205d9e;
+  --blue-8: #2870bd;
+  --blue-9: #0090ff;
+  --crimson-1: #191114;
+  --crimson-10: #ee518a;
+  --crimson-11: #ff92ad;
+  --crimson-12: #fdd3e8;
+  --crimson-2: #201318;
+  --crimson-3: #381525;
+  --crimson-4: #4d122f;
+  --crimson-5: #5c1839;
+  --crimson-6: #6d2545;
+  --crimson-7: #873356;
+  --crimson-8: #b0436e;
+  --crimson-9: #e93d82;
+  --cyan-1: #0b161a;
+  --cyan-10: #23afd0;
+  --cyan-11: #4ccce6;
+  --cyan-12: #b6ecf7;
+  --cyan-2: #101b20;
+  --cyan-3: #082c36;
+  --cyan-4: #003848;
+  --cyan-5: #004558;
+  --cyan-6: #045468;
+  --cyan-7: #12677e;
+  --cyan-8: #11809c;
+  --cyan-9: #00a2c7;
+  --grass-1: #0e1511;
+  --grass-10: #53b365;
+  --grass-11: #71d083;
+  --grass-12: #c2f0c2;
+  --grass-2: #141a15;
+  --grass-3: #1b2a1e;
+  --grass-4: #1d3a24;
+  --grass-5: #25482d;
+  --grass-6: #2d5736;
+  --grass-7: #366740;
+  --grass-8: #3e7949;
+  --grass-9: #46a758;
+  --gray-1: #111;
+  --gray-10: #7b7b7b;
+  --gray-11: #b4b4b4;
+  --gray-12: #eee;
+  --gray-2: #191919;
+  --gray-3: #222;
+  --gray-4: #2a2a2a;
+  --gray-5: #313131;
+  --gray-6: #3a3a3a;
+  --gray-7: #484848;
+  --gray-8: #606060;
+  --gray-9: #6e6e6e;
+  --green-1: #0e1512;
+  --green-10: #33b074;
+  --green-11: #3dd68c;
+  --green-12: #b1f1cb;
+  --green-2: #121b17;
+  --green-3: #132d21;
+  --green-4: #113b29;
+  --green-5: #174933;
+  --green-6: #20573e;
+  --green-7: #28684a;
+  --green-8: #2f7c57;
+  --green-9: #30a46c;
+  --lime-1: #11130c;
+  --lime-10: #d4ff70;
+  --lime-11: #bde56c;
+  --lime-12: #e3f7ba;
+  --lime-2: #151a10;
+  --lime-3: #1f2917;
+  --lime-4: #29371d;
+  --lime-5: #334423;
+  --lime-6: #3d522a;
+  --lime-7: #496231;
+  --lime-8: #577538;
+  --lime-9: #bdee63;
+  --orange-1: #17120e;
+  --orange-10: #ff801f;
+  --orange-11: #ffa057;
+  --orange-12: #ffe0c2;
+  --orange-2: #1e160f;
+  --orange-3: #331e0b;
+  --orange-4: #462100;
+  --orange-5: #562800;
+  --orange-6: #66350c;
+  --orange-7: #7e451d;
+  --orange-8: #a35829;
+  --orange-9: #f76b15;
+  --purple-1: #18111b;
+  --purple-10: #9a5cd0;
+  --purple-11: #d19dff;
+  --purple-12: #ecd9fa;
+  --purple-2: #1e1523;
+  --purple-3: #301c3b;
+  --purple-4: #3d224e;
+  --purple-5: #48295c;
+  --purple-6: #54346b;
+  --purple-7: #664282;
+  --purple-8: #8457aa;
+  --purple-9: #8e4ec6;
+  --red-1: #191111;
+  --red-10: #ec5d5e;
+  --red-11: #ff9592;
+  --red-12: #ffd1d9;
+  --red-2: #201314;
+  --red-3: #3b1219;
+  --red-4: #500f1c;
+  --red-5: #611623;
+  --red-6: #72232d;
+  --red-7: #8c333a;
+  --red-8: #b54548;
+  --red-9: #e5484d;
+  --sage-1: #101211;
+  --sage-10: #717d79;
+  --sage-11: #adb5b2;
+  --sage-12: #eceeed;
+  --sage-2: #171918;
+  --sage-3: #202221;
+  --sage-4: #272a29;
+  --sage-5: #2e3130;
+  --sage-6: #373b39;
+  --sage-7: #444947;
+  --sage-8: #5b625f;
+  --sage-9: #63706b;
+  --sky-1: #0d141f;
+  --sky-10: #a8eeff;
+  --sky-11: #75c7f0;
+  --sky-12: #c2f3ff;
+  --sky-2: #111a27;
+  --sky-3: #112840;
+  --sky-4: #113555;
+  --sky-5: #154467;
+  --sky-6: #1b537b;
+  --sky-7: #1f6692;
+  --sky-8: #197cae;
+  --sky-9: #7ce2fe;
+  --slate-1: #111113;
+  --slate-10: #777b84;
+  --slate-11: #b0b4ba;
+  --slate-12: #edeef0;
+  --slate-2: #18191b;
+  --slate-3: #212225;
+  --slate-4: #272a2d;
+  --slate-5: #2e3135;
+  --slate-6: #363a3f;
+  --slate-7: #43484e;
+  --slate-8: #5a6169;
+  --slate-9: #696e77;
+  --yellow-1: #14120b;
+  --yellow-10: #ffff57;
+  --yellow-11: #f5e147;
+  --yellow-12: #f6eeb4;
+  --yellow-2: #1b180f;
+  --yellow-3: #2d2305;
+  --yellow-4: #362b00;
+  --yellow-5: #433500;
+  --yellow-6: #524202;
+  --yellow-7: #665417;
+  --yellow-8: #836a21;
+  --yellow-9: #ffe629;
+}
