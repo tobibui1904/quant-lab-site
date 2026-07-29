@@ -3,6 +3,9 @@ import hashlib
 import json
 import os
 import pathlib
+import re
+import shutil
+import subprocess
 import time
 from collections import deque
 from contextlib import asynccontextmanager
@@ -1620,6 +1623,41 @@ app = SiteGate(
     allow_origin=PAGES_ORIGIN,
 )
 
+
+def parse_funnel_url(status_output, port):
+    """Public https://...ts.net URL from `tailscale funnel status`, or None.
+
+    Only returns a URL when Funnel is genuinely public AND proxying `port` --
+    a "(tailnet only)" serve is reachable from your own devices, not from the
+    internet, and reporting it as a public link would be a lie.
+    """
+    if not status_output:
+        return None
+    proxies_us = any(
+        f"{host}:{port}" in status_output for host in ("127.0.0.1", "localhost")
+    )
+    if not proxies_us:
+        return None
+    m = re.search(r"(https://[^\s/]+\.ts\.net)\s*\(Funnel on\)", status_output)
+    return m.group(1) if m else None
+
+
+def funnel_url(port=None):
+    """Ask the local tailscaled whether it is publishing this hub.
+
+    Best effort: the tunnel is a separate daemon, so the hub can only ask, and
+    a missing or slow tailscale must never delay startup.
+    """
+    exe = shutil.which("tailscale") or r"C:\Program Files\Tailscale\tailscale.exe"
+    try:
+        out = subprocess.run(
+            [exe, "funnel", "status"],
+            capture_output=True, text=True, timeout=5,
+        ).stdout
+    except Exception:
+        return None
+    return parse_funnel_url(out, PORT if port is None else port)
+
 if __name__ == "__main__":
     pathlib.Path(".fundamental_done").unlink(missing_ok=True)
     # ASCII arrow: the console may be cp1252 when stdout is piped on Windows
@@ -1634,4 +1672,10 @@ if __name__ == "__main__":
             "  Site gate: DISABLED -- the hub is UNPROTECTED. "
             "Do NOT expose this publicly."
         )
+    # The tunnel is a separate daemon, so ask it rather than assume.
+    public = funnel_url()
+    if public:
+        print(f"  Public     -> {public}")
+    else:
+        print(f"  Public     -> not exposed (tailscale funnel --bg {PORT})")
     uvicorn.run(app, host=HOST, port=PORT, log_level="warning")
