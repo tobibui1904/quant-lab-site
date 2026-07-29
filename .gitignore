@@ -1,0 +1,13 @@
+.env
+.env.local
+*.pem
+*.key
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+__marimo__/
+.fredcache/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
