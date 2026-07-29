@@ -209,7 +209,7 @@ def build_sidebar():
             <span class="status-dot" id="dot-{nb['id']}"></span>
         </button>""")
     return "\n".join(items)
-
+ 
 
 # The shell is a plain template (not an f-string): its CSS/JS is brace-heavy,
 # so placeholders (__NAV__, __PORT__) are substituted at the end instead of
