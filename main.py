@@ -87,12 +87,12 @@ NOTEBOOKS = [
         "path":        "/pred_market",
     },
     {
-        "id":          "fixed_income",
+        "id":          "treasury",
         "label":       "Treasury Securities",
         "icon":        "ti-certificate",
         "group":       "Markets",
         "description": "Bills, TIPS, FRNs & STRIPS — curves fitted with rateslib",
-        "path":        "/fixed_income",
+        "path":        "/treasury",
     },
     {
         "id":          "pair_trading",
@@ -173,7 +173,7 @@ marimo_asgi = (
     .with_app(path="/letf",               root="letf.py")
     .with_app(path="/crypto_inference",               root="crypto_inference.py")
     .with_app(path="/pred_market",               root="pred_market.py")
-    .with_app(path="/fixed_income",       root="fixed_income.py")
+    .with_app(path="/treasury",       root="treasury.py")
     .with_app(path="/known_pair_trading", root="known_pair_trading.py")
     .with_app(path="/bull_call_spread",   root="bull_call_spread.py")
     .with_app(path="/bear_put_spread",   root="bear_put_spread.py")
