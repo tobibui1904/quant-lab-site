@@ -1479,29 +1479,48 @@ def _(FI_CSS, dt, mo, np, pd, prices, rl, ust_curve):
         interpolation="log_linear", convention="act360", calendar="nyc",
         id="ust360")
 
-    def _reset(_mat):
-        """Start of the accrual period holding settlement. Coupons roll on the
-        maturity anniversary quarterly, so step back until on or before it."""
-        _d = pd.Timestamp(_mat)
-        while _d > pd.Timestamp(_settle):
-            _d -= pd.DateOffset(months=3)
-        return _d
-
-    def _mkf(_r):
-        """rateslib's FloatRateNote on Treasury FRN conventions. eom=True is
-        load-bearing — coupons fall on the last day of Jan/Apr/Jul/Oct, so a
-        30 April date must not drift to a 31st. The current period's fixing is
-        supplied from the observed coupon: without it rateslib is asked to
-        forecast a rate that set before the curve begins, and refuses."""
-        return rl.FloatRateNote(
+    # Treasury FRN conventions, shared by the probe and the real note below.
+    # eom=True is load-bearing — coupons fall on the last day of
+    # Jan/Apr/Jul/Oct, so a 30 April date must not drift to a 31st.
+    def _fkw(_r):
+        return dict(
             effective=pd.Timestamp(_r["dated_date"]).to_pydatetime(),
             termination=_r["maturity_date"].to_pydatetime(), frequency="q",
             convention="act360", calendar="nyc", modifier="mf", eom=True,
             currency="usd", float_spread=float(_r["frn_spread"]) * 100,
             spread_compound_method="none_simple", fixing_method="ibor(0)",
-            settle=0, ex_div="1b",
-            rate_fixings=pd.Series({_reset(_r["maturity_date"]):
-                                    float(_r["index"])}))
+            settle=0, ex_div="1b")
+
+    def _accrual_start(_note):
+        """The adjusted start of the accrual period rateslib prices at
+        settlement — the date it looks the current fixing up under.
+
+        Read off the note's OWN schedule rather than recomputed. Stepping back
+        from maturity in three-month DateOffsets drifts: 30 April minus three
+        months is 30 January, not the 31 January the eom schedule really rolls
+        on, and once the day-of-month sticks at 30 every earlier date is wrong
+        with it. Hand-rolling also ignores the mf/nyc adjustment that pulls a
+        roll off a weekend. Either way the fixing is keyed on a date rateslib
+        never asks about, so it forecasts the current period off the curve
+        instead — and that period began before the curve's first node, which
+        IS settlement, so it raises rather than returning a wrong number.
+
+        The bracket is (start, end], not [start, end): on a roll date
+        rateslib's own period index takes the period ENDING at settlement."""
+        _sched = _note.leg1.schedule.aschedule
+        _prior = [_d for _d in _sched[:-1] if _d < _settle]
+        return _prior[-1] if _prior else _sched[0]
+
+    def _mkf(_r):
+        """The note, with the current period's fixing supplied from the
+        observed coupon: without it rateslib is asked to forecast a rate that
+        set before the curve begins, and refuses. Built twice over, because
+        the key that fixing needs is a property of the schedule, which does
+        not exist until the note does."""
+        _kw = _fkw(_r)
+        return rl.FloatRateNote(
+            rate_fixings=pd.Series({_accrual_start(rl.FloatRateNote(**_kw)):
+                                    float(_r["index"])}), **_kw)
 
     _notes = [_mkf(_r) for _, _r in _f.iterrows()]
     _f["accrued"] = [float(_n.accrued(_settle, rate_curve=_a360))
