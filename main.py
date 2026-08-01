@@ -95,6 +95,22 @@ NOTEBOOKS = [
         "path":        "/treasury",
     },
     {
+        "id":          "corporate",
+        "label":       "Corporate Bonds",
+        "icon":        "ti-building-bank",
+        "group":       "Markets",
+        "description": "Per-CUSIP IG bonds priced off issuer disclosure",
+        "path":        "/corporate",
+    },
+    {
+        "id":          "muni",
+        "label":       "Municipal Bonds",
+        "icon":        "ti-building-community",
+        "group":       "Markets",
+        "description": "Per-CUSIP munis with tax-equivalent yield",
+        "path":        "/muni",
+    },
+    {
         "id":          "pair_trading",
         "label":       "Pair Trading",
         "icon":        "ti-wallet",
@@ -174,6 +190,8 @@ marimo_asgi = (
     .with_app(path="/crypto_inference",               root="crypto_inference.py")
     .with_app(path="/pred_market",               root="pred_market.py")
     .with_app(path="/treasury",       root="treasury.py")
+    .with_app(path="/corporate",      root="corporate.py")
+    .with_app(path="/muni",           root="muni.py")
     .with_app(path="/known_pair_trading", root="known_pair_trading.py")
     .with_app(path="/bull_call_spread",   root="bull_call_spread.py")
     .with_app(path="/bear_put_spread",   root="bear_put_spread.py")
