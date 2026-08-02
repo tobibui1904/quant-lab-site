@@ -12,7 +12,16 @@ def _():
     from zoneinfo import ZoneInfo
     import json
     import os
+    import sys
     import marimo as mo
+
+    # When stdout is a pipe rather than a console, Python encodes it with the
+    # locale codec — cp1252 on this machine — and every arrow/sigma this
+    # notebook prints raises UnicodeEncodeError. Force UTF-8 on the real
+    # streams; marimo's in-notebook capture stream has no reconfigure().
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
 
     # Import third-party modules
     from dotenv import load_dotenv
