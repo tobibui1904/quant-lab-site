@@ -4,18 +4,18 @@
   "financial_health": {
     "rating": "Weak",
     "confidence": "Medium",
-    "summary": "Liquidity appears solid with a current ratio above 3, but profitability is severely negative and free cash flow is deeply in the red, signaling deteriorating earnings and cash generation."
+    "summary": "Liquidity is ample but profitability is deeply negative and cash burn is large, creating significant downside risk despite a solid current ratio."
   },
   "key_ratios": {
     "current_ratio": {
       "value": 3.7222,
       "unit": "x",
-      "interpretation": "Strong liquidity"
+      "interpretation": "Ample short-term liquidity"
     },
     "quick_ratio": {
       "value": 3.7222,
       "unit": "x",
-      "interpretation": "Strong liquidity"
+      "interpretation": "Ample short-term liquidity without inventory"
     },
     "gross_margin": {
       "value": 72.42,
@@ -25,12 +25,12 @@
     "operating_margin": {
       "value": -161.28,
       "unit": "%",
-      "interpretation": "Operating loss large"
+      "interpretation": "Severe operating loss"
     },
     "net_margin": {
       "value": -171.16,
       "unit": "%",
-      "interpretation": "Net loss deep"
+      "interpretation": "Deep net loss"
     },
     "return_on_assets": {
       "value": -3.41,
@@ -45,17 +45,17 @@
     "debt_to_equity": {
       "value": null,
       "unit": "x",
-      "interpretation": "Not applicable/missing"
+      "interpretation": "Not applicable / not reported"
     },
     "liabilities_to_equity": {
       "value": 1.7265,
       "unit": "x",
-      "interpretation": "Leverage moderate"
+      "interpretation": "Moderate leverage"
     },
     "interest_coverage": {
-      "value": -15.7392,
+      "value": -12.2562,
       "unit": "x",
-      "interpretation": "Insufficient interest coverage"
+      "interpretation": "Insufficient earnings to cover interest"
     },
     "asset_turnover": {
       "value": 0.0199,
@@ -65,39 +65,44 @@
     "free_cash_flow": {
       "value": -1379831000,
       "unit": "$",
-      "interpretation": "Negative free cash flow"
+      "interpretation": "Large cash outflow"
     },
     "fcf_period_days": {
       "value": 273,
       "unit": "days",
-      "interpretation": "FCF period ~9 months"
+      "interpretation": "FCF measured over ~9 months"
     }
   },
   "trends": [
-    "Revenue fell 21.6% QoQ but rose 24.7% YoY, indicating a seasonal dip amid overall growth.",
-    "Net income plunged 59.5% QoQ and over 1,000% YoY, dragging net margin down by about 152 percentage points."
+    "Revenue fell 21.6% QoQ but rose 24.7% YoY, indicating a seasonal dip.",
+    "Net income dropped 59.5% QoQ and over 1,000% YoY, turning sharply negative.",
+    "Net margin contracted by roughly 152 percentage points, moving from positive to deep loss.",
+    "Liquidity remains strong (current ratio >3) despite deteriorating profitability.",
+    "Free cash flow is heavily negative over the 273-day period, showing sustained cash burn."
   ],
   "analysis": {
-    "revenue_and_earnings": "Top-line revenue has slipped sharply in the most recent quarter (-21.6% QoQ) after a year-over-year increase, while earnings have collapsed, turning a prior profit into a sizable loss (-$247.8 M). The earnings swing is driven by widening operating losses and a deterioration in non-operating income.",
-    "margins": "Gross margin remains robust at ~72%, but operating and net margins are deeply negative (-161% and -171% respectively), showing that the cost structure and non-operating expenses are overwhelming profitability.",
-    "balance_sheet": "The balance sheet shows ample current assets relative to current liabilities (current ratio 3.7x), yet total liabilities have surged to $4.6 B, and equity, while still positive, is being eroded by accumulated deficits and large convertible-debt balances.",
-    "cash_flow": "Operating cash flow is positive and growing, but massive investing outlays and negative free cash flow (-$1.38 B over 273 days) indicate that the company is burning cash to fund capital expenditures and debt repayments.",
-    "red_flags": "Continued net losses, negative free cash flow, deteriorating operating margins, and a steep rise in convertible-debt obligations constitute significant red flags.",
-    "investment_thesis": "Given the deteriorating earnings profile and cash-flow strain, the stock is a bearish play."
+    "revenue_and_earnings": "Revenue slipped 21.6% quarter-over-quarter, though it remains up 24.7% year-over-year. Earnings have turned sharply negative, with net loss expanding to $247.8 M in the latest quarter.",
+    "margins": "The company still enjoys a high gross margin of 72%, but operating and net margins are profoundly negative at -161% and -171%, reflecting massive cost overruns and impairment charges.",
+    "balance_sheet": "A current ratio of 3.7× and ample cash provide strong short-term liquidity, yet equity is eroding (cumulative deficit >$600 M) and convertible debt has ballooned, pushing liabilities-to-equity to 1.73×.",
+    "cash_flow": "Operating cash flow is positive, but capital expenditures and investment outflows drive free cash flow to a $1.38 B deficit, indicating the business is financing growth and losses by issuing equity and convertible debt.",
+    "red_flags": "Continued operating losses, negative interest coverage, large cash burn, and reliance on equity and convertible financing pose significant downside risk.",
+    "investment_thesis": "Solid liquidity masks a fundamentally unprofitable business; without a clear turnaround, the near-term outlook remains weak."
   },
   "risks": [
-    "Sustained operating losses could deplete cash reserves despite positive operating cash flow.",
-    "High leverage from convertible debt may force equity dilution or restructuring.",
-    "If revenue decline persists, margin compression will deepen, pressuring the share price further."
+    "Sustained operating losses eroding equity.",
+    "Inability to generate sufficient earnings to cover interest expense.",
+    "Heavy reliance on equity and convertible-debt financing leading to dilution.",
+    "Potential covenant breaches or forced debt restructuring.",
+    "Adverse market perception amplifying volatility and pricing pressure."
   ],
   "option_strategy": {
     "bias": "Bearish",
     "name": "Bear Put Spread",
-    "structure": "Buy 30-strike put, sell 20-strike put, both expiring in approximately three months (next quarter)",
-    "max_profit": "Difference between strikes ($10) minus net premium paid, multiplied by contract size",
-    "max_loss": "Net premium paid for the spread",
-    "ideal_iv_environment": "Elevated",
-    "rationale": "The company's earnings and cash-flow outlook are weakening, suggesting further downside potential. A bear put spread captures price decline while limiting risk, which is suitable when the stock may be volatile but the downside is the priority.",
-    "why_best": "A simple long put would provide upside if the stock falls sharply, but it exposes the trader to high premium cost in an already elevated IV environment. A bear put spread reduces premium outlay while still profiting from a moderate drop, and it caps loss if the stock rebounds-a key advantage over outright short positions or put spreads with wider width that dilute payoff. The spread aligns with the bearish thesis and the expected volatility without requiring precise price timing."
+    "structure": "Buy 1 put at $12 strike, sell 1 put at $8 strike, both with ~3-month expiry (next quarter)",
+    "max_profit": "Strike difference ($4) minus net debit paid; profit realized if stock falls below $8 at expiry.",
+    "max_loss": "Limited to the net premium (debit) paid for the spread.",
+    "ideal_iv_environment": "elevated",
+    "rationale": "The company's earnings are deteriorating, cash burn is high, and leverage is rising, suggesting further downside pressure. A bear put spread captures gains from a price decline while capping risk, matching the bearish bias without the high cost of a naked long put.",
+    "why_best": "A naked long put would provide unlimited upside but is expensive in the current elevated implied-volatility environment, hurting risk-adjusted returns. A simple bear call spread (short calls) caps upside but exposes unlimited loss if the stock rallies, which is undesirable given the large cash position that could support a rebound. The bear put spread delivers a defined-risk, defined-reward profile aligned with the expected downside, uses limited capital, and benefits from the high IV by allowing a relatively cheap debit with meaningful payoff if the stock slides toward the lower strike."
   }
 }
