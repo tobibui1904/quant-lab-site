@@ -8,6 +8,7 @@ app = marimo.App(width="medium", css_file="theme.css", html_head_file="theme_hea
 def _():
     import os
     import pathlib
+    import sys
     import pandas as pd
     import math
     import requests
@@ -24,6 +25,20 @@ def _():
     import marimo as mo
     import plotly.graph_objects as go
     from datetime import date
+    from dotenv import load_dotenv
+
+    # When stdout is a pipe rather than a console, Python encodes it with the
+    # locale codec — cp1252 on this machine — and every arrow/sigma this
+    # notebook prints raises UnicodeEncodeError. Force UTF-8 on the real
+    # streams; marimo's in-notebook capture stream has no reconfigure().
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
+
+    # The Alpaca/FRED keys live in .env next to the notebook; without this the
+    # sector cell only works when they happen to be set in the OS environment.
+    # (assign to _ so marimo doesn't render load_dotenv's bool return).
+    _ = load_dotenv(mo.notebook_dir() / ".env")
 
     return (
         FactorAnalysis,
