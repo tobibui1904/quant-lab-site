@@ -4,7 +4,7 @@
   "financial_health": {
     "rating": "Weak",
     "confidence": "Medium",
-    "summary": "Liquidity appears solid with a current ratio above 3, but profitability is severely negative and free cash flow is deeply in the red, signaling deteriorating earnings and cash generation."
+    "summary": "The company shows ample short-term liquidity but is plagued by deep operating losses, negative free cash flow and deteriorating earnings. High leverage and a negative interest coverage ratio further erode financial resilience."
   },
   "key_ratios": {
     "current_ratio": {
@@ -25,12 +25,12 @@
     "operating_margin": {
       "value": -161.28,
       "unit": "%",
-      "interpretation": "Operating loss large"
+      "interpretation": "Severe operating loss"
     },
     "net_margin": {
       "value": -171.16,
       "unit": "%",
-      "interpretation": "Net loss deep"
+      "interpretation": "Deep net loss"
     },
     "return_on_assets": {
       "value": -3.41,
@@ -45,59 +45,61 @@
     "debt_to_equity": {
       "value": null,
       "unit": "x",
-      "interpretation": "Not applicable/missing"
+      "interpretation": null
     },
     "liabilities_to_equity": {
       "value": 1.7265,
       "unit": "x",
-      "interpretation": "Leverage moderate"
+      "interpretation": "Leverage moderate-high"
     },
     "interest_coverage": {
       "value": -15.7392,
       "unit": "x",
-      "interpretation": "Insufficient interest coverage"
+      "interpretation": "Insufficient to cover interest"
     },
     "asset_turnover": {
       "value": 0.0199,
       "unit": "x",
-      "interpretation": "Very low asset efficiency"
+      "interpretation": "Low efficiency"
     },
     "free_cash_flow": {
       "value": -1379831000,
       "unit": "$",
-      "interpretation": "Negative free cash flow"
+      "interpretation": "Large negative cash generation"
     },
     "fcf_period_days": {
       "value": 273,
       "unit": "days",
-      "interpretation": "FCF period ~9 months"
+      "interpretation": "FCF covers ~273-day window"
     }
   },
   "trends": [
-    "Revenue fell 21.6% QoQ but rose 24.7% YoY, indicating a seasonal dip amid overall growth.",
-    "Net income plunged 59.5% QoQ and over 1,000% YoY, dragging net margin down by about 152 percentage points."
+    "Revenue fell 21.6% QoQ despite a 24.7% YoY increase, indicating recent top-line weakness.",
+    "Net income plunged 59.5% QoQ and more than 1000% YoY, turning sharply negative.",
+    "Net margin deteriorated by 152 percentage points, reinforcing the earnings decline."
   ],
   "analysis": {
-    "revenue_and_earnings": "Top-line revenue has slipped sharply in the most recent quarter (-21.6% QoQ) after a year-over-year increase, while earnings have collapsed, turning a prior profit into a sizable loss (-$247.8 M). The earnings swing is driven by widening operating losses and a deterioration in non-operating income.",
-    "margins": "Gross margin remains robust at ~72%, but operating and net margins are deeply negative (-161% and -171% respectively), showing that the cost structure and non-operating expenses are overwhelming profitability.",
-    "balance_sheet": "The balance sheet shows ample current assets relative to current liabilities (current ratio 3.7x), yet total liabilities have surged to $4.6 B, and equity, while still positive, is being eroded by accumulated deficits and large convertible-debt balances.",
-    "cash_flow": "Operating cash flow is positive and growing, but massive investing outlays and negative free cash flow (-$1.38 B over 273 days) indicate that the company is burning cash to fund capital expenditures and debt repayments.",
-    "red_flags": "Continued net losses, negative free cash flow, deteriorating operating margins, and a steep rise in convertible-debt obligations constitute significant red flags.",
-    "investment_thesis": "Given the deteriorating earnings profile and cash-flow strain, the stock is a bearish play."
+    "revenue_and_earnings": "Revenue declined sharply in the latest quarter (-21.6% QoQ) after a modest YoY gain, while earnings swung from a profit in Q1 to sizable losses in Q2 and Q3, driving a negative net-income trend.",
+    "margins": "The gross margin remains robust at ~72%, but operating and net margins are deeply negative (-161% and -171%) and have worsened dramatically, reflecting outsized SG&A, impairments and financing costs.",
+    "balance_sheet": "Current assets comfortably exceed current liabilities (current ratio ~3.7x), and equity stays positive around $2.6B, but liabilities have surged, especially convertible notes (~$3.6B), pushing the liabilities-to-equity ratio to 1.73x and yielding a negative interest-coverage metric.",
+    "cash_flow": "Operating cash flow is positive and growing, yet free cash flow is heavily negative (-$1.38B) due to massive capital expenditures and investments. The firm relies on large equity and convertible-debt financings to fund operations.",
+    "red_flags": "Persistent net losses, collapsing net margin, negative free cash flow, high convertible-debt burden, and a -15.7x interest coverage ratio signal significant risk of financial distress if the turnaround stalls.",
+    "investment_thesis": "Given the deteriorating earnings profile and reliance on financing, the stock faces downward pressure, making a bearish option play the most logical short-term strategy."
   },
   "risks": [
-    "Sustained operating losses could deplete cash reserves despite positive operating cash flow.",
-    "High leverage from convertible debt may force equity dilution or restructuring.",
-    "If revenue decline persists, margin compression will deepen, pressuring the share price further."
+    "Continued revenue contraction could exacerbate cash-burn.",
+    "Impairment charges or additional write-downs may further erode profitability.",
+    "High convertible-debt exposure could trigger dilution or covenant breaches.",
+    "Rising interest rates may worsen the already negative interest coverage."
   ],
   "option_strategy": {
     "bias": "Bearish",
     "name": "Bear Put Spread",
-    "structure": "Buy 30-strike put, sell 20-strike put, both expiring in approximately three months (next quarter)",
-    "max_profit": "Difference between strikes ($10) minus net premium paid, multiplied by contract size",
-    "max_loss": "Net premium paid for the spread",
-    "ideal_iv_environment": "Elevated",
-    "rationale": "The company's earnings and cash-flow outlook are weakening, suggesting further downside potential. A bear put spread captures price decline while limiting risk, which is suitable when the stock may be volatile but the downside is the priority.",
-    "why_best": "A simple long put would provide upside if the stock falls sharply, but it exposes the trader to high premium cost in an already elevated IV environment. A bear put spread reduces premium outlay while still profiting from a moderate drop, and it caps loss if the stock rebounds-a key advantage over outright short positions or put spreads with wider width that dilute payoff. The spread aligns with the bearish thesis and the expected volatility without requiring precise price timing."
+    "structure": "Buy 1 ATM put and sell 1 OTM put 15% lower strike, both expiring in the next quarterly series (~3 months).",
+    "max_profit": "Difference between strikes minus net premium paid.",
+    "max_loss": "Net premium paid for the spread.",
+    "ideal_iv_environment": "elevated",
+    "rationale": "The company is trending to lower revenue and deeper losses, with a weak balance sheet and negative free cash flow-indicating further downside risk. A bear put spread captures a price decline while limiting premium outlay, which is important given the volatile but unclear magnitude of the move.",
+    "why_best": "A simple long put would be expensive in an elevated-IV environment and offers uncapped loss of the premium; a bear call spread would require the stock to stay flat and leaves upside risk if the company unexpectedly rebounds. The bear put spread aligns with the clear bearish outlook, provides defined risk, and benefits from a potential decline without the high cost of a naked put."
   }
 }
