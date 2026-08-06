@@ -32,6 +32,14 @@ def _():
     import ollama
     import marimo as mo
 
+    # When stdout is a pipe rather than a console, Python encodes it with the
+    # locale codec — cp1252 on this machine — and the report's ✓/✗/⚠/═ output
+    # raises UnicodeEncodeError. Force UTF-8 on the real streams; marimo's
+    # in-notebook capture stream has no reconfigure().
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
+
     return (
         Any,
         BeautifulSoup,

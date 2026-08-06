@@ -4,7 +4,7 @@
   "financial_health": {
     "rating": "Weak",
     "confidence": "Medium",
-    "summary": "The company is experiencing a severe revenue contraction, massive operating and net losses, and a negative equity position. Liquidity appears marginally adequate but the balance sheet is heavily leveraged and cash burn is accelerating."
+    "summary": "The company is experiencing an acute liquidity squeeze and solvency strain, with negative equity and a massive free cash flow deficit. Although current ratio remains marginally above 1, overwhelming losses, collapsing revenue and a deteriorating balance sheet outweigh any short-term liquidity cushion."
   },
   "key_ratios": {
     "current_ratio": {
@@ -74,31 +74,32 @@
     }
   },
   "trends": [
-    "Revenue fell 32.75% quarter-over-quarter, indicating a steep top-down trajectory.",
-    "Net income rose 6.02% quarter-over-quarter but remains in deep loss, with a year-over-year decline of 1,781%."
+    "Revenue fell sharply QoQ (-32.75%), indicating a severe top-line contraction.",
+    "Net income improved modestly QoQ (+6.02%) but YoY is down dramatically (-1781.12%), reflecting a massive earnings collapse.",
+    "Margins remain deeply negative (operating and net), and asset turnover stays near zero, underscoring operating inefficiency."
   ],
   "analysis": {
-    "revenue_and_earnings": "Revenue is collapsing at roughly one-third each quarter, shrinking the top line dramatically. Though net loss showed a modest quarter-over-quarter improvement, the absolute loss remains massive and is worsening year-over-year.",
-    "margins": "Gross margin stays around 60%, but operating expenses are exploding, driving operating margin to -476% and net margin to -1,257%, signaling an unsustainable cost structure.",
-    "balance_sheet": "Current assets barely exceed current liabilities (current ratio ~1.2), but equity has turned deeply negative (-$78.6m) and leverage ratios are extreme, reflecting a balance sheet on the brink of insolvency.",
-    "cash_flow": "Free cash flow is heavily negative (-$540.5m) over the most recent 89-day window, and cash balances have been eroding after a brief rebound, raising concerns about the ability to fund operations without additional financing.",
-    "red_flags": "Key red flags include the sharp revenue decline, explosive losses, negative equity, high debt burden, and ongoing cash burn that could trigger covenant breaches or bankruptcy.",
-    "investment_thesis": "The company's fundamentals are profoundly deteriorating, making a bearish outlook the most defensible stance."
+    "revenue_and_earnings": "Revenue has contracted by nearly one-third in the most recent quarter, while net income, though slightly higher QoQ, remains in the negative territory with a YoY plunge of over 1700%. The earnings trajectory is unsustainable without a turnaround.",
+    "margins": "The gross margin of 60% masks a catastrophic operating margin of -476% and a net margin of -1257%, signaling that core operations are hemorrhaging cash after covering cost of goods sold.",
+    "balance_sheet": "Current assets barely cover current liabilities (current ratio ~1.2), but equity has turned negative and the debt-to-equity ratio is deeply inverted, indicating solvency risk and a reliance on external financing.",
+    "cash_flow": "Free cash flow is a sizable outflow of $-540.5 M over an 89-day window, confirming that operating cash generation is insufficient to fund the business.",
+    "red_flags": "Negative equity, steeply declining revenue, extreme negative margins, and a large cash burn constitute red flags that could precipitate a covenant breach or bankruptcy.",
+    "investment_thesis": "Given the accelerating top-line decline, overwhelming losses, and fragile liquidity, the stock is poised for further downside pressure."
   },
   "risks": [
-    "Continued revenue decline could exhaust remaining cash reserves.",
-    "Inability to achieve positive operating cash flow may force debt restructurings or asset sales at distressed prices.",
-    "High leverage and negative equity increase the probability of covenant breaches or bankruptcy.",
-    "Convertible debt and warrant liabilities could lead to further equity dilution if conversion is triggered."
+    "Continued revenue erosion could trigger default on debt covenants.",
+    "Negative equity and high leverage increase the probability of restructuring or bankruptcy.",
+    "Volatile cash flows and reliance on short-term financing raise refinancing risk.",
+    "Potential dilution from convertible debt conversions and warrant exercises."
   ],
   "option_strategy": {
     "bias": "Bearish",
     "name": "Bear Put Spread",
-    "structure": "Buy 1 $12 put and sell 1 $8 put, expiring in the next quarterly options cycle (approx. 3 months out).",
-    "max_profit": "Maximum profit equals the strike width ($4) minus the net premium paid; realized if the stock closes at or below $8 at expiry.",
-    "max_loss": "Maximum loss is the net premium paid for the spread; limited risk if the stock rallies.",
+    "structure": "Buy 1 WULF 30-day put option with strike $2.00; sell 1 WULF 30-day put option with strike $1.00 (or nearest lower strike). Expiry aligned with the next quarterly filing window (~90 days).",
+    "max_profit": "Maximum profit equals the strike spread ($1.00) minus the net premium paid; captures the full downside to $1.00 while limiting loss to the net premium.",
+    "max_loss": "Maximum loss is limited to the net premium paid for the spread.",
     "ideal_iv_environment": "elevated",
-    "rationale": "Given the steep revenue contraction, massive losses, and negative equity, the stock is likely to continue down-trend. A bear put spread captures downside while limiting exposure to the high implied volatility that typically accompanies distressed equities.",
-    "why_best": "A simple long put would be more expensive in the current elevated IV environment, eroding risk-adjusted return. Credit-based strategies (e.g., bear call spread) expose the investor to unlimited loss if the stock rallies sharply, which is undesirable given the volatility of distressed stocks. The bear put spread provides defined risk, benefits from a potential sharp price decline, and aligns with the fundamentally bearish outlook."
+    "rationale": "The company exhibits a weak financial foundation, a steep revenue decline, and a massive cash burn, making further equity depreciation likely. A bear put spread profits from a price drop while capping downside risk, which is prudent given the stock's potential for extreme volatility.",
+    "why_best": "A naked long put would be expensive given the high implied volatility of a distressed issuer, and a simple short call carries unlimited risk if the price rebounds. A bear put spread offers defined risk, leverages the expected decline, and benefits from the elevated IV environment without the infinite loss exposure of uncovered options."
   }
 }
