@@ -1,7 +1,11 @@
 import marimo
 
-__generated_with = "0.23.9"
-app = marimo.App(width="medium", css_file="theme.css", html_head_file="theme_head.html")
+__generated_with = "0.23.16"
+app = marimo.App(
+    width="medium",
+    css_file="theme.css",
+    html_head_file="theme_head.html",
+)
 
 
 @app.cell
@@ -157,7 +161,16 @@ def _(
 
 
 @app.cell
-def _(ACCOUNT, MODEL, asyncio, chat, json, jsonschema, mcp_manager, ollama_tools):
+def _(
+    ACCOUNT,
+    MODEL,
+    asyncio,
+    chat,
+    json,
+    jsonschema,
+    mcp_manager,
+    ollama_tools,
+):
     # cell 3 - model function for mo.ui.chat
 
     SYSTEM_PROMPT = {
@@ -489,53 +502,6 @@ def _(EXAMPLES, mo, pm_trader_agent):
             prompts=list(EXAMPLES.keys()),   # one clickable suggestion per tool
         )
     chat_ui
-    return
-
-
-@app.cell
-def _():
-    # import requests
-    # import pandas as pd
-    # import time
-
-    # BASE = "https://pro-api.solscan.io/playground/account/transfer"
-    # headers = {"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3ODI4ODEwMTc2OTEsImVtYWlsIjoiYnVpdHVhbm5naGlhMTkwNEBnbWFpbC5jb20iLCJhY3Rpb24iOiJ0b2tlbi1hcGkiLCJhcGlWZXJzaW9uIjoidjIiLCJpYXQiOjE3ODI4ODEwMTd9.49Df54NmxcaBnV2C-ClR5hVTF66axjRxXIQPE7IgDFs"}
-
-    # FROM_TIME = 1782950400          # 2026-07-01 00:00:00 UTC (after end of June 2026)
-    # TO_TIME = int(time.time())      # now
-
-    # params = {
-    #     "address": "C6Up9J4cPyw6hYER9M3RFBoQVA8NoQ6C7KSLSi6zH1Jq",
-    #     "from": "DcMLnAS7Arf19czfjhsZSi9cKcpmJSdd2aa9Javy3Pbr",
-    #     "to": "C6Up9J4cPyw6hYER9M3RFBoQVA8NoQ6C7KSLSi6zH1Jq",
-    #     "from_time": FROM_TIME,
-    #     "to_time": TO_TIME,
-    #     "exclude_amount_zero": "true",
-    #     "page_size": 100,           # max out page size to reduce calls
-    #     "sort_by": "block_time",
-    #     "sort_order": "desc",
-    # }
-
-    # all_rows = []
-    # page = 1
-    # while True:
-    #     params["page"] = page
-    #     resp = requests.get(BASE, headers=headers, params=params)
-    #     resp.raise_for_status()
-    #     rows = resp.json().get("data", [])
-    #     if not rows:
-    #         break
-    #     all_rows.extend(rows)
-    #     if len(rows) < params["page_size"]:   # last page
-    #         break
-    #     page += 1
-    #     time.sleep(0.2)                        # be polite to the API
-
-    # df = pd.DataFrame(all_rows)
-    # if "block_time" in df.columns:
-    #     df["block_time_dt"] = pd.to_datetime(df["block_time"], unit="s", utc=True)
-
-    # df
     return
 
 
