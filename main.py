@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import marimo
+import otc_watchlist
 from site_gate import SiteGate
 
 load_dotenv(pathlib.Path(__file__).resolve().parent / ".env")
@@ -53,6 +54,7 @@ NOTEBOOKS = [
         "group":       "Research",
         "description": "Off-exchange tape — short volume, dark pools & short interest",
         "path":        "/otc_track",
+        "locked":      True,
     },
     {
         "id":          "forex",
@@ -900,6 +902,41 @@ __NAV__
     } catch (e) {}
   }
 
+  // ── OTC Track gate ────────────────────────────────────────────────
+  // OTC Track charts whatever Pair Trading and LETF Backtest last published,
+  // so until one of them has run it has nothing to say and stays locked.
+  // Either desk unlocks it; run both and the tape covers both watchlists.
+  let lastOtcStamp;   // stays undefined until the first poll answers
+
+  function reloadCachedFrame(id) {
+    const frame = frameCache[id];
+    if (!frame) return;                 // never opened, nothing to refresh
+    const btn = document.getElementById("nav-" + id);
+    if (!btn) return;
+    frame.src = btn.dataset.path;
+    const dot = document.getElementById("dot-" + id);
+    if (dot) dot.className = "status-dot loading";
+    frame.onload = () => { if (dot) dot.className = "status-dot live"; };
+  }
+
+  async function pollOtcGate() {
+    try {
+      const res  = await fetch("/api/otc-ready");
+      const data = await res.json();
+
+      if (data.ready) unlockTab("otc_track"); else lockTab("otc_track");
+
+      // The stamp folds in which desks are armed and what each picked, so a
+      // new pair, a new triple, or a desk dropping out all move it. Reload so
+      // the tape follows the picks without a manual refresh — skipped on the
+      // first poll, which is only learning the current value.
+      if (lastOtcStamp !== undefined && data.stamp !== lastOtcStamp) {
+        reloadCachedFrame("otc_track");
+      }
+      lastOtcStamp = data.stamp;
+    } catch (e) {}
+  }
+
   let pairChangeDetected = false;
   async function pollPairHash() {
     try {
@@ -1268,8 +1305,10 @@ __NAV__
     setInterval(tickClock, 1000);
     setInterval(pollStatus,   3000);
     setInterval(pollPairHash, 3000);
+    setInterval(pollOtcGate,  3000);
     setInterval(pollBlotter,  3000);
     pollStatus();
+    pollOtcGate();
     pollBlotter();
   });
 </script>
@@ -1554,6 +1593,23 @@ async def status():
 @hub.get("/api/pair-ready")
 async def pair_ready():
     return {"ready": pathlib.Path(".pair_ready").exists()}
+
+@hub.get("/api/otc-ready")
+async def otc_ready():
+    """Gate state for OTC Track: which upstream desks are vouching for symbols.
+
+    Ready as soon as either Pair Trading or LETF Backtest has completed a run;
+    the stamp moves whenever their picks do, which is the sidebar's cue to
+    reload the frame. A symbol file with no ready flag behind it is a leftover
+    and counts for neither (see otc_watchlist.py).
+    """
+    symbols, armed = otc_watchlist.resolve_watchlist(".")
+    return {
+        "ready":   bool(symbols),
+        "stamp":   otc_watchlist.watchlist_stamp("."),
+        "sources": [src.label for src in armed],
+        "symbols": symbols,
+    }
 
 @hub.get("/api/oanda/positions")
 async def oanda_positions():
