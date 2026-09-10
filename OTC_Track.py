@@ -11,6 +11,7 @@ app = marimo.App(
 @app.cell
 def _():
     import os
+    import sys
     from datetime import date, timedelta
     from pathlib import Path
 
@@ -20,10 +21,21 @@ def _():
 
     import marimo as mo
 
+    _nb_dir = Path(__file__).resolve().parent
+
     # Load .env from the notebook's own directory, not the cwd marimo happens to
     # be launched from. Real environment variables still win over the file.
-    _ = load_dotenv(Path(__file__).resolve().parent / ".env")
-    return Path, date, mo, os, pd, requests, timedelta
+    _ = load_dotenv(_nb_dir / ".env")
+
+    # Same reasoning for the watchlist module: the hub launches this notebook
+    # from its own working directory, so put the notebook's directory on the
+    # path rather than relying on cwd.
+    if str(_nb_dir) not in sys.path:
+        sys.path.insert(0, str(_nb_dir))
+
+    import otc_watchlist as wl
+
+    return Path, date, mo, os, pd, requests, timedelta, wl
 
 
 @app.cell
@@ -67,28 +79,40 @@ def _(finra_access_token, mo):
 
 
 @app.cell
-def _(Path, mo):
-    # Watchlist = the active pair (written by known_pair_trading.py) plus the
-    # selected LETF triple (written by letf.py). Either file may be missing;
-    # first-seen order, deduped.
+def _(Path, mo, wl):
+    # Watchlist = the active pair (Pair Trading) plus the selected LETF triple
+    # (LETF Backtest), whichever of the two has actually run. A symbol file on
+    # its own proves nothing — both writers leave one behind indefinitely — so
+    # each source counts only while its ready flag stands. See otc_watchlist.py.
     _root = Path(__file__).resolve().parent
-    _syms = []
-    for _fname in ("pair.txt", "ETF_triple.txt"):
-        _p = _root / _fname
-        if _p.exists():
-            _syms += _p.read_text().split()
-    SYMBOLS = list(dict.fromkeys(_syms))
+    SYMBOLS, ARMED = wl.resolve_watchlist(_root)
+
     mo.stop(
         not SYMBOLS,
-        mo.md("No symbols found — run the pair-trading or LETF notebook first."),
+        mo.Html("""
+    <div style="max-width:560px;margin:5rem auto;text-align:center;">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;border:0.5px solid #C9A961;margin-bottom:1.25rem;">
+        <i class="ti ti-lock" style="font-size:22px;color:#C9A961;"></i>
+      </div>
+      <div style="font-family:'DM Serif Display',serif;font-size:30px;font-style:italic;color:var(--color-text-primary);margin-bottom:10px;">Nothing to track yet</div>
+      <p style="font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.9;color:var(--color-text-secondary);letter-spacing:.04em;">
+        This desk reports the off-exchange tape for whatever the strategy
+        notebooks are working on — it has no watchlist of its own.<br><br>
+        Run <b>Pair Trading</b> to the end, or pick a triple in
+        <b>LETF Backtest</b>. Either one unlocks this page; run both and the
+        tape covers both.
+      </p>
+    </div>"""),
     )
+
     FOCUS = SYMBOLS  # dark-pool venue breakdown covers the whole watchlist
-    return FOCUS, SYMBOLS
+    return ARMED, FOCUS, SYMBOLS
 
 
 @app.cell
-def _(SYMBOLS, finra_token, mo):
+def _(ARMED, SYMBOLS, finra_token, mo):
     _pair = " · ".join(SYMBOLS)
+    _src = " + ".join(f"{s.label} ({len(s.symbols)})" for s in ARMED)
     _live = finra_token is not None
     _chip_bg = "#E1F5EE" if _live else "#F7E5DC"
     _chip_fg = "#0F6E56" if _live else "#8A3D1F"
@@ -100,7 +124,8 @@ def _(SYMBOLS, finra_token, mo):
         <i class="ti ti-eye-off" style="font-size: 22px; color: #1D9E75;"></i>
       </div>
       <h1 style="font-family: 'DM Serif Display', serif; font-size: 36px; font-weight: 400; font-style: italic; margin: 0 0 6px; letter-spacing: -0.01em; color: var(--color-text-primary);">OTC Track</h1>
-      <p style="font-family: 'DM Mono', monospace; font-size: 11px; color: var(--color-text-secondary); letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 1.25rem;">Off-exchange tape · {_pair}</p>
+      <p style="font-family: 'DM Mono', monospace; font-size: 11px; color: var(--color-text-secondary); letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 0.5rem;">Off-exchange tape · {_pair}</p>
+      <p style="font-family: 'DM Mono', monospace; font-size: 10px; color: var(--color-text-tertiary, #93A49B); letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 1.25rem;">watchlist from {_src}</p>
       <div style="display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: {_chip_fg}; background: {_chip_bg}; padding: 4px 14px; border-radius: 999px;">
         <span style="width: 6px; height: 6px; border-radius: 50%; background: {_dot}; display: inline-block;"></span>
         {_label}
@@ -414,7 +439,8 @@ def _(SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
             page_header(
                 "Short Interest",
                 "03",
-                subtitle=f"consolidated · settlement {_settle} · biweekly cycle",
+                subtitle=f"consolidated · settlement {_settle} · biweekly cycle "
+                        f"(FINRA publishes ~8 business days after settlement)",
             ),
             mo.Html(
                 f'<div style="display:flex;gap:14px;flex-wrap:wrap;">{"".join(_cards)}</div>'
