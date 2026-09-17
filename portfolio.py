@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import pandas as pd
 import duckdb
@@ -18,6 +19,15 @@ from skfolio.optimization import (
 from skfolio.preprocessing import prices_to_returns
 
 np.random.seed(123)
+
+# When stdout is a pipe rather than a console -- as under the hub, whose output
+# is redirected to hub.log -- Python encodes it with the locale codec, cp1252 on
+# this machine, and the check marks and arrows data() prints raise
+# UnicodeEncodeError. Force UTF-8 on the real streams; marimo's in-notebook
+# capture stream has no reconfigure().
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 # --- Alpaca client ---
 
