@@ -302,11 +302,19 @@ def _(SPEC, eng, lc, mo, res, sc, symbol_select):
             )
         )
 
+    import inspect
+
+    # Marimo can reload this notebook while retaining an older imported engine.
+    _payoff_kwargs = (
+        {"order_result": res}
+        if "order_result" in inspect.signature(eng.payoff_chart).parameters
+        else {}
+    )
     mo.vstack([
         eng.section_header(SPEC, "Order Logistics", "3.1"),
         eng.render_spread_ui(SPEC, lc, sc, symbol_select.value, order_result=res),
         eng.section_header(SPEC, "Payoff Chart", "3.2"),
-        mo.ui.plotly(eng.payoff_chart(SPEC, lc, sc, symbol_select.value)),
+        mo.ui.plotly(eng.payoff_chart(SPEC, lc, sc, symbol_select.value, **_payoff_kwargs)),
     ])
     return
 
