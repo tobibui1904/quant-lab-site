@@ -9,6 +9,7 @@ def _():
     import warnings
     warnings.filterwarnings("ignore")
     import os
+    import pathlib
     from dotenv import load_dotenv
     import marimo as mo
     import datetime
@@ -41,9 +42,25 @@ def _():
         mo,
         np,
         os,
+        pathlib,
         pd,
         yf,
     )
+
+
+@app.cell
+def _(pathlib):
+    # OTC Track only trusts ETF_triple.txt while this flag stands, so drop it
+    # the moment the notebook reloads: until a triple is actually selected in
+    # this session, the file on disk is a leftover and vouches for nothing.
+    pathlib.Path(".letf_ready").unlink(missing_ok=True)
+
+    # Handed to the cell that raises the flag again. Without that edge the two
+    # cells share no dependency, marimo may run them in either order, and the
+    # clear can land *after* the raise — leaving OTC Track reading a
+    # ".letf_ready" that no longer holds. Same guard as known_pair_trading.py.
+    letf_flag_cleared = True
+    return (letf_flag_cleared,)
 
 
 @app.cell
@@ -144,7 +161,7 @@ def _(etf_triples, mo):
 
 
 @app.cell
-def _(etf_triples, mo, underlying_select):
+def _(etf_triples, letf_flag_cleared, mo, pathlib, underlying_select):
     mo.stop(not underlying_select.value, mo.md("*Configure filters above and select the ETF please.*"))
 
 
@@ -157,6 +174,13 @@ def _(etf_triples, mo, underlying_select):
             f"{selected_row['Bull_3x']} "
             f"{selected_row['Bear_3x']}\n"
         )
+
+    # Flag last, and only once the write above has landed: this is what
+    # unlocks the OTC Track tab and lets it read the triple.
+    # `letf_flag_cleared` is an ordering dependency only (see the
+    # invalidation cell).
+    if letf_flag_cleared:
+        pathlib.Path(".letf_ready").touch()
 
     def ticker_card(label, ticker, accent):
         return mo.Html(f"""
