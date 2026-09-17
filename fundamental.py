@@ -1680,6 +1680,11 @@ def _(mo, tabs):
     import pathlib
     pathlib.Path(".fundamental_done").touch()
 
+    # Hub assistant run record: both reports are on disk and the flag is set.
+    # Never raises; see agent_diag/record.py.
+    import agent_diag.record as _agent_record
+    _agent_record.record_fundamental()
+
     mo.vstack([
         tabs,
         mo.md("✅ Fundamental analysis complete.")

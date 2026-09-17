@@ -1,105 +1,104 @@
 {
-  "company": "IREN",
-  "report_date": "2026-03-31",
+  "company": "FTNT",
+  "report_date": "2026-06-30",
   "financial_health": {
-    "rating": "Weak",
-    "confidence": "Medium",
-    "summary": "The company shows ample short-term liquidity but is plagued by deep operating losses, negative free cash flow and deteriorating earnings. High leverage and a negative interest coverage ratio further erode financial resilience."
+    "rating": "Strong",
+    "confidence": "High",
+    "summary": "Fortinet is delivering accelerating top-line growth and expanding earnings, backed by very high margins and abundant free cash flow. Leverage is modest and interest coverage is ample, giving the balance sheet ample headroom despite a large contract-liability base."
   },
   "key_ratios": {
     "current_ratio": {
-      "value": 3.7222,
+      "value": 1.2825,
       "unit": "x",
-      "interpretation": "Strong liquidity"
+      "interpretation": "Adequate short-term liquidity"
     },
     "quick_ratio": {
-      "value": 3.7222,
+      "value": 1.1944,
       "unit": "x",
-      "interpretation": "Strong liquidity"
+      "interpretation": "Strong liquid-asset coverage"
     },
     "gross_margin": {
-      "value": 72.42,
+      "value": 80.24,
       "unit": "%",
-      "interpretation": "High gross profitability"
+      "interpretation": "Very high profitability on sales"
     },
     "operating_margin": {
-      "value": -161.28,
+      "value": 33.66,
       "unit": "%",
-      "interpretation": "Severe operating loss"
+      "interpretation": "Robust operating efficiency"
     },
     "net_margin": {
-      "value": -171.16,
+      "value": 29.61,
       "unit": "%",
-      "interpretation": "Deep net loss"
+      "interpretation": "Strong bottom-line profitability"
     },
     "return_on_assets": {
-      "value": -3.41,
+      "value": 5.58,
       "unit": "%",
-      "interpretation": "Negative ROA"
+      "interpretation": "Moderate asset returns"
     },
     "return_on_equity": {
-      "value": -9.3,
+      "value": 39.09,
       "unit": "%",
-      "interpretation": "Negative ROE"
+      "interpretation": "Exceptional equity returns"
     },
     "debt_to_equity": {
-      "value": null,
+      "value": 0.957,
       "unit": "x",
-      "interpretation": null
+      "interpretation": "Leverage below 1, manageable"
     },
     "liabilities_to_equity": {
-      "value": 1.7265,
+      "value": 6.001,
       "unit": "x",
-      "interpretation": "Leverage moderate-high"
+      "interpretation": "High liability base relative to equity"
     },
     "interest_coverage": {
-      "value": -15.7392,
+      "value": 171.527,
       "unit": "x",
-      "interpretation": "Insufficient to cover interest"
+      "interpretation": "Ample ability to meet interest"
     },
     "asset_turnover": {
-      "value": 0.0199,
+      "value": 0.1886,
       "unit": "x",
-      "interpretation": "Low efficiency"
+      "interpretation": "Low asset efficiency typical for software"
     },
     "free_cash_flow": {
-      "value": -1379831000,
+      "value": 1972100000,
       "unit": "$",
-      "interpretation": "Large negative cash generation"
+      "interpretation": "Large cash generation"
     },
     "fcf_period_days": {
-      "value": 273,
+      "value": 180,
       "unit": "days",
-      "interpretation": "FCF covers ~273-day window"
+      "interpretation": "180-day cash-flow window"
     }
   },
   "trends": [
-    "Revenue fell 21.6% QoQ despite a 24.7% YoY increase, indicating recent top-line weakness.",
-    "Net income plunged 59.5% QoQ and more than 1000% YoY, turning sharply negative.",
-    "Net margin deteriorated by 152 percentage points, reinforcing the earnings decline."
+    "Revenue grew 10.7% QoQ and 33.0% YoY; net income surged 13.4% QoQ and 39.9% YoY, with net margin expanding 1.46 percentage points, underscoring accelerating growth and profitability."
   ],
   "analysis": {
-    "revenue_and_earnings": "Revenue declined sharply in the latest quarter (-21.6% QoQ) after a modest YoY gain, while earnings swung from a profit in Q1 to sizable losses in Q2 and Q3, driving a negative net-income trend.",
-    "margins": "The gross margin remains robust at ~72%, but operating and net margins are deeply negative (-161% and -171%) and have worsened dramatically, reflecting outsized SG&A, impairments and financing costs.",
-    "balance_sheet": "Current assets comfortably exceed current liabilities (current ratio ~3.7x), and equity stays positive around $2.6B, but liabilities have surged, especially convertible notes (~$3.6B), pushing the liabilities-to-equity ratio to 1.73x and yielding a negative interest-coverage metric.",
-    "cash_flow": "Operating cash flow is positive and growing, yet free cash flow is heavily negative (-$1.38B) due to massive capital expenditures and investments. The firm relies on large equity and convertible-debt financings to fund operations.",
-    "red_flags": "Persistent net losses, collapsing net margin, negative free cash flow, high convertible-debt burden, and a -15.7x interest coverage ratio signal significant risk of financial distress if the turnaround stalls.",
-    "investment_thesis": "Given the deteriorating earnings profile and reliance on financing, the stock faces downward pressure, making a bearish option play the most logical short-term strategy."
+    "revenue_and_earnings": "Revenue has been expanding at double-digit quarterly rates, reaching $2.05 bn in Q2 2026, while net income climbed to $606.3 m, reflecting a 39.9% YoY acceleration. EPS rose in step, indicating that earnings growth is not merely a share-count effect.",
+    "margins": "Gross margin remains near 80%, and operating margin sits above 33%, both well above industry averages. Net margin improved by roughly 1.5 pp, confirming that the company can convert higher sales into bottom-line profit without margin erosion.",
+    "balance_sheet": "Current assets comfortably exceed current liabilities (current ratio ≈ 1.28) and the quick ratio is also above 1, indicating solid liquidity. Debt-to-equity is under 1, but total liabilities are six times equity due largely to contract-liability balances, which merit monitoring. Cash and cash equivalents exceed $2.3 bn, providing ample cushion for growth initiatives.",
+    "cash_flow": "Free cash flow of $1.97 bn over the last 180 days demonstrates strong cash conversion. Operating cash flow consistently exceeds $1 bn per quarter, while capital expenditures are modest relative to cash generation, leaving room for strategic investments or shareholder returns.",
+    "red_flags": "The balance sheet carries a large contract-liability component that could become a cash drain if future revenue slows. Retained earnings have swung from deep deficits to modest positives, indicating earnings volatility. Aggressive share repurchases have reduced cash and could limit flexibility in a downturn. Integration risk from recent acquisitions (bargain-purchase gain) also exists.",
+    "investment_thesis": "Fortinet's accelerating revenue, expanding margins, and robust cash generation make it a compelling growth play with attractive upside and manageable risk."
   },
   "risks": [
-    "Continued revenue contraction could exacerbate cash-burn.",
-    "Impairment charges or additional write-downs may further erode profitability.",
-    "High convertible-debt exposure could trigger dilution or covenant breaches.",
-    "Rising interest rates may worsen the already negative interest coverage."
+    "Rising contract-liability balances could pressure cash if revenue growth decelerates.",
+    "High liabilities-to-equity ratio limits financial flexibility.",
+    "Intense competition in the cybersecurity market could compress margins.",
+    "Integration challenges from recent acquisitions may affect earnings consistency.",
+    "Volatile share price could increase option premium costs."
   ],
   "option_strategy": {
-    "bias": "Bearish",
-    "name": "Bear Put Spread",
-    "structure": "Buy 1 ATM put and sell 1 OTM put 15% lower strike, both expiring in the next quarterly series (~3 months).",
-    "max_profit": "Difference between strikes minus net premium paid.",
-    "max_loss": "Net premium paid for the spread.",
-    "ideal_iv_environment": "elevated",
-    "rationale": "The company is trending to lower revenue and deeper losses, with a weak balance sheet and negative free cash flow-indicating further downside risk. A bear put spread captures a price decline while limiting premium outlay, which is important given the volatile but unclear magnitude of the move.",
-    "why_best": "A simple long put would be expensive in an elevated-IV environment and offers uncapped loss of the premium; a bear call spread would require the stock to stay flat and leaves upside risk if the company unexpectedly rebounds. The bear put spread aligns with the clear bearish outlook, provides defined risk, and benefits from a potential decline without the high cost of a naked put."
+    "bias": "Bullish",
+    "name": "Bull Call Spread",
+    "structure": "Buy 55-strike call, sell 65-strike call, 3-month expiry (next quarter)",
+    "max_profit": "Maximum profit = (65-55) - net premium paid per share, multiplied by 100 shares per contract",
+    "max_loss": "Maximum loss = net premium paid for the spread",
+    "ideal_iv_environment": "Elevated - high IV lets you collect premium on the sold 65-strike while keeping cost low on the long 55-strike",
+    "rationale": "Fundamentals are strongly bullish, suggesting the stock will rise above the lower strike. The spread captures upside while capping downside, preserving capital if the rally stalls. It also benefits from the current elevated implied volatility, allowing a richer credit on the short leg.",
+    "why_best": "A naked long call would require a higher upfront premium and offers unlimited loss if the stock falls, which is unnecessary given the solid balance sheet. A put spread or outright short strategies conflict with the bullish outlook. The bull call spread delivers defined risk, leverages the expected price appreciation, and exploits the elevated IV to offset part of the cost, making it the most efficient way to express a bullish view for the next quarter."
   }
 }
