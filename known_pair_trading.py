@@ -597,7 +597,8 @@ def _(OLS, add_constant, adfuller, adj_close_train, mo, np, pd, raw_pairs):
         mo.md(f"**{len(pairs)}** of {len(raw_pairs)} FDR-significant pairs passed the ADF filter."),
         mo.ui.table(pair_diagnostics),
     ])
-    return (pairs,)
+    # pair_diagnostics is handed downstream for the hub assistant's run record.
+    return pair_diagnostics, pairs
 
 
 @app.cell
@@ -2037,6 +2038,8 @@ def _(
 
     status_items = []
     order_items  = []
+    # Outcome per leg, handed to the hub assistant's run record after this cell.
+    pair_exec = {"signal_date": None, "hold": False, "rows": []}
 
     trade_log['Date'] = pd.to_datetime(trade_log['Date'])
     # Reactive execution: act only if the most recent ACTUAL bar fired an
@@ -2044,33 +2047,42 @@ def _(
     # spread we actually observed rather than a stale forward schedule.
     signal_date = pd.Timestamp(result.index[-1]).date()
     today_row = trade_log[trade_log['Date'].dt.date == signal_date]
+    pair_exec["signal_date"] = str(signal_date)
 
     if today_row.empty:
+        pair_exec["hold"] = True
         status_items.append(mo.callout(mo.md(f"⏸ **Hold** — no signal on the latest bar (`{signal_date}`)."), kind="info"))
     else:
         for _ticker, _action, _qty in zip(today_row['Asset'], today_row['Action'], today_row['Quantity']):
+            _leg = {"symbol": _ticker, "action": _action, "qty": _qty, "outcome": "unknown"}
+            pair_exec["rows"].append(_leg)
             # Look the symbol up directly. This used to GET /v2/assets and pull
             # down the entire tradable universe to linear-scan it for two names.
             try:
                 asset = trading_client.get_asset(_ticker)
             except Exception as e:
+                _leg["outcome"] = "skipped: lookup failed"
                 order_items.append(mo.callout(mo.md(f"⚠️ Ticker `{_ticker}` lookup failed: {e}"), kind="warn"))
                 continue
 
             asset_info = f"**{asset.symbol}** — {asset.exchange} — Tradable: `{asset.tradable}`"
 
             if not asset.tradable:
+                _leg["outcome"] = "skipped: not tradable"
                 order_items.append(mo.callout(mo.md(f"🚫 {asset_info}\nNot tradable, skipping."), kind="warn"))
                 continue
 
             if _action == 'Sell' and not asset.shortable:
+                _leg["outcome"] = "skipped: not shortable"
                 order_items.append(mo.callout(mo.md(f"🚫 {asset_info}\nCannot be sold short, skipping."), kind="warn"))
                 continue
 
             # Whole shares: GTC market orders reject fractional quantities, and
             # the backtest already sized in whole shares.
             _qty = int(_qty)
+            _leg["qty"] = _qty
             if _qty <= 0:
+                _leg["outcome"] = "skipped: zero quantity"
                 order_items.append(mo.callout(mo.md(f"⚠️ {asset_info}\nQuantity rounds to 0, skipping."), kind="warn"))
                 continue
 
@@ -2082,11 +2094,14 @@ def _(
             )
             try:
                 order = trading_client.submit_order(order_data=order_data)
+                _leg["outcome"] = "submitted"
+                _leg["order_ref"] = str(order.id)
                 order_items.append(mo.callout(
                     mo.md(f"✅ {asset_info}\n`{_action}` {_qty} shares — Order ID: `{order.id}`"),
                     kind="success"
                 ))
             except Exception as e:
+                _leg["outcome"] = "failed"
                 order_items.append(mo.callout(
                     mo.md(f"❌ {asset_info}\nOrder failed: {e}"),
                     kind="danger"
@@ -2108,6 +2123,20 @@ def _(
         mo.ui.table(positions_df) if not positions_df.empty
         else mo.callout(mo.md("No open positions."), kind="info"),
     ])
+    return (pair_exec,)
+
+
+@app.cell
+def _(chosen, pair_diagnostics, pair_exec, pairs, save_btn, simulation):
+    # Hub assistant run record: screening diagnostics, the backtest, the latest
+    # signal, and what happened to each leg. Runs after the orders above and
+    # never raises; see agent_diag/record.py.
+    import agent_diag.record as _agent_record
+
+    if save_btn.value:
+        _agent_record.record_pair_trading(
+            chosen, pair_diagnostics, simulation, pair_exec, pairs_available=len(pairs)
+        )
     return
 
 
