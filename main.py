@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import marimo
 import otc_watchlist
+from agent_diag.api import make_router as make_agent_router
 from site_gate import SiteGate
 
 load_dotenv(pathlib.Path(__file__).resolve().parent / ".env")
@@ -1312,6 +1313,8 @@ __NAV__
     pollBlotter();
   });
 </script>
+<!-- Hub output assistant: stays hidden unless AI_ENABLED=1 (agent_diag/ui.js). -->
+<script src="/api/agent/ui.js" defer></script>
 </body>
 </html>
 """
@@ -1680,6 +1683,10 @@ async def alpaca_close(symbol: str):
         return await asyncio.to_thread(_close_alpaca_position, symbol)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+
+# Hub output assistant (read-only). Off unless AI_ENABLED=1; see agent_diag/api.py.
+# The desk ids are passed in so agent_diag never imports this module.
+hub.include_router(make_agent_router(desk_ids={"hub"} | {nb["id"] for nb in NOTEBOOKS}))
 
 # Mounted last: Mount("/") matches every path, so the hub's own routes above
 # must be registered first to win. Each notebook keeps its own prefix
