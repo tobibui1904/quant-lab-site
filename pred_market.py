@@ -21,6 +21,11 @@ def _():
     from contextlib import AsyncExitStack
     from ollama import chat
     import traceback
+    import os
+    import shutil
+    import sys
+    from pathlib import Path
+    from prediction_discovery import PolymarketDiscovery, market_rows, mcp_error_message
 
     MODEL = "gemma4:cloud"
 
@@ -29,9 +34,17 @@ def _():
     # hallucinated name silently creates a new empty profile instead of erroring.
     ACCOUNT = "default"
 
-    server_params = StdioServerParameters(
-        command=r"C:\Users\buitu\AppData\Roaming\Python\Python311\Scripts\pm-trader-mcp.exe"
-    )
+    user_script = (Path.home() / "AppData" / "Roaming" / "Python"
+                   / f"Python{sys.version_info.major}{sys.version_info.minor}"
+                   / "Scripts" / "pm-trader-mcp.exe")
+    mcp_command = (os.getenv("PM_TRADER_MCP_COMMAND") or shutil.which("pm-trader-mcp")
+                   or (str(user_script) if user_script.is_file() else None))
+    if not mcp_command:
+        raise RuntimeError(
+            "pm-trader-mcp was not found. Install polymarket-paper-trader in the "
+            "website's Python environment, or set PM_TRADER_MCP_COMMAND to its executable."
+        )
+    server_params = StdioServerParameters(command=mcp_command)
 
     def mcp_tool_to_ollama(tool) -> dict:
         return {
@@ -54,6 +67,9 @@ def _():
         jsonschema,
         mcp_tool_to_ollama,
         mo,
+        PolymarketDiscovery,
+        market_rows,
+        mcp_error_message,
         server_params,
         stdio_client,
         threading,
@@ -78,6 +94,83 @@ def _(mo):
       <div style="margin-top: 1.5rem; width: 40px; height: 0.5px; background: var(--color-border-tertiary); margin-left: auto; margin-right: auto;"></div>
     </div>
     """)
+    return
+
+
+@app.cell
+def _(mo):
+    event_search = mo.ui.form(
+        mo.ui.text(placeholder="Search Polymarket events, e.g. Fed rates", label="Event search"),
+        submit_button_label="Search events",
+        clear_on_submit=False,
+    )
+    mo.vstack([mo.md("### Explore events"), event_search])
+    return (event_search,)
+
+
+@app.cell
+def _(PolymarketDiscovery, event_search, mo):
+    query = (event_search.value or "").strip()
+    events = []
+    search_error = None
+    if query:
+        discovery = PolymarketDiscovery()
+        try:
+            events = discovery.search_events(query)
+        except Exception as exc:
+            search_error = f"Event search failed: {exc}"
+        finally:
+            discovery.close()
+    choices = {f"{event.get('title') or event['slug']} ({event['slug']})": event["slug"]
+               for event in events}
+    picker_options = choices or {"No event selected": None}
+    event_picker = mo.ui.dropdown(
+        options=picker_options, label="Choose an event", searchable=True,
+        value=next(iter(picker_options)), disabled=not bool(choices),
+    )
+    if search_error:
+        output = mo.md(search_error)
+    elif query and not events:
+        output = mo.md("No open events found. Try a broader search term.")
+    elif events:
+        output = event_picker
+    else:
+        output = mo.md("Search by topic, team, person, or event title.")
+    output
+    return (event_picker,)
+
+
+@app.cell
+def _(PolymarketDiscovery, event_picker, market_rows, mo):
+    slug = event_picker.value
+    if not slug:
+        event_output = mo.md("Select an event to see its tradable markets.")
+    else:
+        discovery = PolymarketDiscovery()
+        try:
+            event = discovery.get_event(slug)
+            markets = market_rows(event)
+            if markets:
+                first_slug = markets[0]["slug"]
+                event_output = mo.vstack([
+                    mo.md(f"### {event.get('title') or slug}"),
+                    mo.md(f"[View event on Polymarket](https://polymarket.com/event/{slug})"),
+                    mo.md("Indicative prices from Polymarket. Paper orders use the live order book at execution time."),
+                    mo.ui.table([
+                        {"Market": row["question"], "Slug to use in chat": row["slug"],
+                         "Yes": f"{row['yes']:.2%}" if row["yes"] is not None else "—",
+                         "No": f"{row['no']:.2%}" if row["no"] is not None else "—"}
+                        for row in markets
+                    ]),
+                    mo.md(f"Use the exact slug in the chat below. For example: **Show the order book for `{first_slug}`** or **Buy $25 of YES on `{first_slug}`**."),
+                ])
+            else:
+                event_output = mo.md("This event has no open markets available for paper trading.")
+        except Exception as exc:
+            event_output = mo.md(f"Could not load event: {exc}")
+        finally:
+            discovery.close()
+    event_output
     return
 
 
@@ -164,10 +257,13 @@ def _(
 def _(
     ACCOUNT,
     MODEL,
+    PolymarketDiscovery,
     asyncio,
     chat,
     json,
     jsonschema,
+    market_rows,
+    mcp_error_message,
     mcp_manager,
     ollama_tools,
 ):
@@ -208,11 +304,7 @@ def _(
 
 
     def _fmt_num(v):
-        """Format a number preserving real precision -- never rounds, never invents."""
-        if isinstance(v, float):
-            # keep full precision, strip trailing zeros but don't round the value
-            s = f"{v:.6f}".rstrip("0").rstrip(".")
-            return s if s else "0"
+        """Keep the numeric precision supplied by the API."""
         return str(v)
 
 
@@ -252,7 +344,7 @@ def _(
                 return ", ".join(_fmt_num(x) if isinstance(x, float) else str(x) for x in v)
             if v is None:
                 return ""
-            return str(v)
+            return str(v).replace("|", "\\|").replace("\n", " ")
 
         header = "| " + " | ".join(cols) + " |"
         sep = "| " + " | ".join("---" for _ in cols) + " |"
@@ -284,6 +376,9 @@ def _(
             return f"TOOL ERROR: {raw_text}", None
 
         parsed = _try_parse_json(raw_text)
+        application_error = mcp_error_message(parsed)
+        if application_error:
+            return f"TOOL ERROR: {application_error}", None
         table = _json_to_markdown_table(parsed) if parsed is not None else None
         return raw_text, table
 
@@ -301,6 +396,17 @@ def _(
 
     def _is_error_content(content: str) -> bool:
         return content.startswith(("TOOL ERROR", "TOOL TIMEOUT", "INVALID ARGUMENTS"))
+
+
+    def _lookup_discovery(name, args):
+        """Use the documented Gamma search and event slug endpoints."""
+        discovery = PolymarketDiscovery()
+        try:
+            if name == "search_markets":
+                return discovery.search_market_rows(args["query"], limit=args.get("limit", 10))
+            return discovery.get_event(args["slug"])
+        finally:
+            discovery.close()
 
 
     async def pm_trader_agent(messages, config):
@@ -376,8 +482,21 @@ def _(
                         content, table = validation_error, None
                     else:
                         try:
-                            result = await mcp_manager.call_tool_async(name, args)
-                            content, table = _extract_content(result)
+                            if name in ("search_markets", "get_event"):
+                                payload = await asyncio.to_thread(_lookup_discovery, name, args)
+                                if name == "get_event":
+                                    rows = market_rows(payload)
+                                    content = json.dumps({"ok": True, "data": {
+                                        "title": payload.get("title"), "slug": payload["slug"],
+                                        "markets": rows,
+                                    }})
+                                else:
+                                    rows = payload
+                                    content = json.dumps({"ok": True, "data": rows})
+                                table = _json_to_markdown_table({"data": rows})
+                            else:
+                                result = await mcp_manager.call_tool_async(name, args)
+                                content, table = _extract_content(result)
                         except asyncio.TimeoutError:
                             content = (
                                 f"TOOL TIMEOUT: {name} did not respond in time. "
@@ -390,6 +509,8 @@ def _(
 
                 if _is_error_content(content):
                     last_tool_had_error = True
+                    last_verified_table = None
+                    last_verified_source = None
                 elif table:
                     last_verified_table = table
                     last_verified_source = name
