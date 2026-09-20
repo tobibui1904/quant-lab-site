@@ -118,334 +118,122 @@ def _(TICKERS, bondfile, fetch):
 
 @app.cell
 def _(SPEC, as_of, bondfile, np, rl, universe):
+    """Descriptive cross-credit YTM benchmark, not an OAS or fair-value model.
+
+    Sparse synthetic instruments summarize median coupon/yield by tenor.
+    Their prices are schedule-aware, but median yields across different
+    issuers, coupons and options are only an approximation to a market curve.
+    No ratings, call schedules or issuer controls are available in this feed.
     """
-    One credit curve across the fit-eligible universe, then every bond's
-    richness measured against it.
-
-    The curve is rateslib's own: a discount `rl.Curve` calibrated by
-    `rl.Solver`, with every fair yield read back out of it through
-    `FixedRateBond.rate(metric="ytm")`. No financial calculation in this cell
-    is hand-rolled. It used to be: a cubic through log-tenor via `np.polyfit`,
-    read back with `np.polyval`, and a tenor axis measured in `days / 365.25`
-    — a divisor that is not a market convention and matched nothing else on
-    the desk.
-
-    The replacement is not merely tidier, it is more correct. A fair yield off
-    a discount curve depends on the bond's own COUPON schedule, which a
-    tenor-only polynomial cannot express at all: two bonds maturing the same
-    day with 3% and 7% coupons have genuinely different yields, and the cubic
-    handed them the same fair value and called the difference richness.
-
-    Nodes are far sparser than the bond count, deliberately: a curve threaded
-    through every quote fits each bond exactly and reports zero richness. This
-    smooths, so a bond sitting off the fitted curve is saying something.
-
-    Only `in_fit` bonds calibrate it. Variable-rate notes are excluded because
-    their coupon resets and a fixed-coupon yield misprices them; distressed
-    bonds because they trade on recovery, not on spread.
-
-    MIN_FIT_YEARS/MAX_FIT_YEARS are defined once and used for BOTH the
-    calibration filter and the ranking gate below, so the two can never drift
-    apart. curve_ytm is still computed for every bond outside this band, now
-    by genuine extrapolation off the calibrated curve rather than by clipping
-    the tenor — a fair-yield estimate is still useful context to show next to
-    a 40-year bond. But resid_bp, the ranking signal,
-    is NaN'd for any bond outside the band, exactly as it already is for
-    in_fit == False: the curve was not calibrated on that tenor, so a bond
-    sitting there is not "off the curve", it is off the curve's domain, and
-    must not be ranked as if it were a genuine dislocation.
-
-    MIN_FIT_YEARS is bondfile.MIN_YEARS_TO_MATURITY, and that is the whole
-    point of it being one constant. This cell used to claim it "serves as the
-    near-maturity guard treasury.py's bill cell applies explicitly". It did
-    not: it gated calibration and ranking only, never add_yield, so a bond
-    inside 91 days still got a yield and still rendered it. MONHGR 5.000
-    10/01/26, 63 days out and marked 101.70, solved to -4.85% and showed that
-    number in the On-the-curve tab beside genuine yields. The guard now runs
-    where it has to, in bondfile.clean_rows, before any yield is computed —
-    and because the two use the same constant, the claim is now true rather
-    than merely written down. The window filter below is consequently
-    belt-and-braces at the near end and load-bearing only at the far end.
-
-    MIN_SANE_YIELD/MAX_SANE_YIELD (0.5%-15%) are a data-corruption trip wire,
-    not a market-regime assertion. They exist to catch a units error or a
-    parse bug (e.g. a yield reported as 470% or 0.047%) before it silently
-    feeds the rich/cheap table, not to assert what "normal" rates look like.
-    A genuine cutting cycle putting front-end IG under 3%, or munis (whose
-    coupon is tax-exempt and so structurally price through corporates)
-    sitting well below that, are legitimate market states and must render,
-    not raise. Keep this band wide for that reason, and do not tighten it
-    later on the assumption it encodes a rate view - it doesn't. The slope
-    check is the real fit-quality signal; this is only a last-ditch sanity
-    floor/ceiling against corrupted data.
-    """
-    MIN_FIT_YEARS, MAX_FIT_YEARS = bondfile.MIN_YEARS_TO_MATURITY, 31
-    MIN_SANE_YIELD, MAX_SANE_YIELD = 0.5, 15.0
-
-    # The tenor axis and the discount curve MUST share a day count, and this
-    # is the one constant that makes them. `years` decides only WHERE a bond
-    # sits on the curve; the Curve itself discounts under its own
-    # `convention`. If the two disagree, a bond is placed at one point on the
-    # tenor axis and priced at another, and the residual quietly picks up a
-    # pure convention error that reads as richness. So CURVE_CONVENTION feeds
-    # rl.dcf here and rl.Curve(convention=...) below, and nothing else sets
-    # either. The old `(maturity - as_of).days / 365.25` agreed with nothing:
-    # 365.25 is a calendar average, not a market convention.
+    MIN_FIT_YEARS, MAX_FIT_YEARS = bondfile.MIN_YEARS_TO_MATURITY, 31.0
+    MIN_SANE_YIELD, MAX_SANE_YIELD = bondfile.YTM_FLOOR, bondfile.DISTRESSED_YTM
+    _settle = as_of.to_pydatetime()
+    # Match the observed-yield schedule anchor exactly. No business-day roll
+    # is appropriate for this artificial historical schedule start.
+    from pandas import DateOffset as _DateOffset
+    _effective = (as_of - _DateOffset(years=5)).to_pydatetime()
     CURVE_CONVENTION = "act365f"
 
-    _settle = as_of.to_pydatetime()
-    # The same anchor bondfile.add_yield uses, for the reason set out in its
-    # docstring: `effective` is arbitrary for a held-to-maturity yield, but the
-    # settlement-to-maturity leg has to actually EXIST in rateslib's generated
-    # coupon schedule. Anchoring it near maturity truncates the schedule to the
-    # final coupon periods and solves a materially wrong yield (6.02% against
-    # an expected 5.15%, on this project's own fixtures). Five years back is
-    # safely before every kept bond's maturity, and rl.add_tenor rather than a
-    # raw timedelta because this is calendar arithmetic.
-    _effective = rl.add_tenor(_settle, "-5y", "F", "nyc")
-
     def _years(maturities):
-        """Tenor in years, on rateslib's day count rather than a hand divisor."""
-        return [rl.dcf(_settle, _m.to_pydatetime(), CURVE_CONVENTION)
-                for _m in maturities]
+        return [rl.dcf(_settle, m.to_pydatetime(), CURVE_CONVENTION)
+                for m in maturities]
 
     def _tenor_date(years):
-        """The date a tenor lands on. 365 is act365f's own denominator, so this
-        inverts rl.dcf under CURVE_CONVENTION rather than introducing a second,
-        subtly different day count on the way back."""
-        return rl.add_tenor(_settle, f"{int(round(float(years) * 365))}d",
-                            "F", "nyc")
+        from datetime import timedelta
+        return _settle + timedelta(days=round(float(years) * 365))
 
-    _fit = universe[universe["in_fit"] & universe["ytm"].notna()].copy()
+    _fit = universe[universe["in_fit"] & np.isfinite(universe["ytm"])].copy()
     _fit["years"] = _years(_fit["maturity"])
-    _fit = _fit[(_fit["years"] > MIN_FIT_YEARS) & (_fit["years"] < MAX_FIT_YEARS)]
+    _fit = _fit[_fit["years"].between(MIN_FIT_YEARS, MAX_FIT_YEARS, inclusive="neither")]
     _fit = _fit.sort_values("years")
+    if len(_fit) < 30:
+        raise ValueError(f"only {len(_fit)} eligible bonds; need at least 30")
 
-    # A degenerate fit — too few bonds to say anything about a curve, or a fit
-    # that doesn't look like a credit curve — must fail loudly rather than
-    # render.
-    _MIN_FIT_BONDS = 30
-    if len(_fit) < _MIN_FIT_BONDS:
-        raise ValueError(
-            f"only {len(_fit)} bonds in [{MIN_FIT_YEARS}, {MAX_FIT_YEARS}]y "
-            f"window — need at least {_MIN_FIT_BONDS} to calibrate a stable "
-            "credit curve; check upstream universe/in_fit filtering")
-
-    # Calibrate to a handful of BUCKETED instruments, not to every bond.
-    #
-    # This is a capacity limit, not a preference. Measured on this universe:
-    # a Solver given 25 bonds converges in 0.5s, 100 in 1.6s, and 400 does not
-    # converge at all — `max_iter: 50 exceeded, f0: nan`. There are thousands
-    # of fit-eligible bonds here, so bond-per-instrument is not merely slow,
-    # it is unreachable. Ten bucket medians converge in ~0.1s.
-    #
-    # Bucketing is also what keeps the curve SMOOTH, which is the whole point:
-    # a node per bond would fit every quote exactly and report zero richness.
     _TENORS = (0.5, 1, 2, 3, 5, 7, 10, 15, 20, 30)
-    # ±25% of the tenor, and a bucket has to clear TWO gates to become a node.
-    #
-    # Size, because a node calibrated to two bonds is a node calibrated to two
-    # bonds' idiosyncrasies. And the target LEVEL, because size alone does not
-    # catch the failure this desk actually hit: the muni 0.5y bucket held ten
-    # bonds — comfortably over the size floor — and medianed -0.625%, and the
-    # Solver faithfully calibrated the front of the curve to it. Every short
-    # bond's resid_bp was then measured against a negative fair value, and
-    # nothing said so, because the runtime band assertion below only sampled
-    # 2y/5y/10y/30y and never looked at the front.
-    #
-    # A bucket median outside [MIN_SANE_YIELD, MAX_SANE_YIELD] is corrupt input
-    # for calibration purposes, on exactly the reading of that band used
-    # everywhere else here: a trip wire for bad data, not a view on rates. Drop
-    # the bucket and carry on with the rest, as a too-thin bucket already is —
-    # one bad tenor must not cost the desk its whole curve. Both kinds of drop
-    # are counted and named on the page; see `dropped_buckets`.
-    _MIN_BUCKET_BONDS = 5
     _buckets, dropped_buckets = {}, []
     for _t in _TENORS:
-        _b = _fit[(_fit["years"] >= _t * 0.75) & (_fit["years"] <= _t * 1.25)]
-        if len(_b) < _MIN_BUCKET_BONDS:
-            dropped_buckets.append(
-                {"tenor": _t, "reason": "too few bonds", "n": len(_b),
-                 "target": float(_b["ytm"].median()) if len(_b) else float("nan")})
+        _b = _fit[_fit["years"].between(_t * 0.75, _t * 1.25)]
+        _target = float(_b["ytm"].median()) if len(_b) else float("nan")
+        _reason = ("too few bonds" if len(_b) < 5 else
+                   "median yield outside the sanity band" if not
+                   MIN_SANE_YIELD < _target < MAX_SANE_YIELD else "")
+        if _reason:
+            dropped_buckets.append(dict(tenor=_t, reason=_reason, n=len(_b), target=_target))
             continue
-        _target = float(_b["ytm"].median())
-        if not MIN_SANE_YIELD <= _target <= MAX_SANE_YIELD:
-            dropped_buckets.append(
-                {"tenor": _t, "reason": "median yield outside the sane band",
-                 "n": len(_b), "target": _target})
+        _rep = _b.iloc[int((_b["years"] - _b["years"].median()).abs().argmin())]
+        _date = _rep["maturity"].to_pydatetime()
+        if _date in _buckets:
+            dropped_buckets.append(dict(tenor=_t, reason="duplicate anchor maturity", n=len(_b), target=_target))
             continue
-        _buckets[_t] = (_b, _target)
-
-    # Losing the odd tenor is survivable; losing most of them is not a curve.
-    _MIN_ANCHORS = 3
-    if len(_buckets) < _MIN_ANCHORS:
-        raise ValueError(
-            f"only {len(_buckets)} of {len(_TENORS)} tenor buckets survived "
-            f"({dropped_buckets}) — need at least {_MIN_ANCHORS} anchors to "
-            "calibrate a curve worth reading")
-
-    # A discount curve, log-linear in DF, exactly as the Treasury desk's bill
-    # and coupon cells build theirs. LineCurve is not an option here: pricing a
-    # FixedRateBond off one raises `disc_curve cannot be inferred from a
-    # non-DF based curve`.
-    _cv = rl.Curve(
-        nodes={_settle: 1.0, **{_tenor_date(_t): 1.0 for _t in _buckets}},
+        _buckets[_date] = (float(_b["Coupon"].median()), _target, _b.index)
+    if len(_buckets) < 3:
+        raise ValueError(f"only {len(_buckets)} surviving anchors; need at least 3: {dropped_buckets}")
+    _buckets = dict(sorted(_buckets.items()))
+    anchor_tenors = tuple(rl.dcf(_settle, d, CURVE_CONVENTION) for d in _buckets)
+    MIN_FIT_YEARS, MAX_FIT_YEARS = min(anchor_tenors), max(anchor_tenors)
+    # Node dates must coincide with representative maturities. A realistic
+    # initial DF avoids a zero-yield starting point in the nested YTM solver.
+    _cv = rl.Curve(nodes={_settle: 1.0, **{
+        d: (1 + target / 200) ** (-2 * rl.dcf(_settle, d, CURVE_CONVENTION))
+        for d, (_, target, _) in _buckets.items()}},
         interpolation="log_linear", convention=CURVE_CONVENTION,
         calendar="nyc", id="credit")
-    _pricing = {"curves": _cv, "metric": "ytm", "settlement": _settle}
-
-    _insts, _targets, _labels = [], [], []
-    for _t, (_b, _target) in _buckets.items():
-        # One representative bond per bucket: the bond nearest the bucket's
-        # median tenor — its real maturity date, so no date is reconstructed
-        # from a year count — carrying the bucket's median coupon, targeted at
-        # the bucket's median yield (already validated above). Medians, not
-        # means: a bucket of thousands of credits has a long tail and a mean
-        # chases it.
-        _rep = _b.iloc[int((_b["years"] - _b["years"].median()).abs().argmin())]
-        _insts.append(rl.FixedRateBond(
-            effective=_effective,
-            termination=_rep["maturity"].to_pydatetime(),
-            fixed_rate=float(_b["Coupon"].median()), spec=SPEC,
-            curves=_cv.id))
-        _targets.append(_target)
-        _labels.append(f"{_t:g}y")
+    _pricing = dict(curves=_cv, metric="ytm", settlement=_settle)
+    _insts = [rl.FixedRateBond(effective=_effective, termination=d,
+                              fixed_rate=coupon, spec=SPEC, curves=_cv.id)
+              for d, (coupon, _, _) in _buckets.items()]
+    _targets = [target for _, target, _ in _buckets.values()]
     n_anchors = len(_insts)
-    # The tenors the curve is actually pinned at, exported because the credit
-    # surface marks them on the fitted line: a reader looking at a residual
-    # ought to be able to see whether it is measured against an anchor or
-    # against interpolation between two of them.
-    anchor_tenors = tuple(_buckets)
+    _solver = rl.Solver(curves=[_cv], instruments=[(i, _pricing) for i in _insts],
+                        s=_targets, id="creditfit")
+    _errors = np.array([float(i.rate(**_pricing)) for i in _insts]) - _targets
+    if not np.isfinite(_errors).all() or np.max(np.abs(_errors)) > 1e-5:
+        raise ValueError("calibration failed to reprice its targets within 0.001bp")
+    _dfs = np.array([float(_cv[d]) for d in _buckets])
+    if not (np.isfinite(_dfs) & (_dfs > 0)).all():
+        raise ValueError("calibration produced invalid discount factors")
 
-    # Each instrument entry is a 2-tuple (Instrument, pricing kwargs). A
-    # 3-tuple raises.
-    _solver = rl.Solver(
-        curves=[_cv], instruments=[(_i, _pricing) for _i in _insts],
-        s=_targets, instrument_labels=_labels, id="creditfit")
-
-    # Reading the curve at a bare tenor needs a stated reference coupon,
-    # because a fair yield off a discount curve genuinely depends on the
-    # coupon — that dependence is the reason for using a discount curve at
-    # all, and the thing the old cubic could not see. The fit's median coupon
-    # is the honest choice, and it is used only for the sanity checkpoints
-    # below; per-bond fair value uses each bond's own coupon.
-    _REF_COUPON = float(_fit["Coupon"].median())
-
-    def curve(years, coupon=_REF_COUPON):
-        """Fair yield at a tenor, in percent, off the calibrated curve.
-
-        Clipped to the calibration window so a caller asking for 40y gets the
-        curve's own far end rather than an unbounded extrapolation."""
+    def curve(years, coupon=float(_fit["Coupon"].median())):
+        """Reference-coupon YTM; unsupported tenors are explicitly missing."""
         return np.array([
-            float(rl.FixedRateBond(
-                effective=_effective, termination=_tenor_date(_y),
-                fixed_rate=coupon, spec=SPEC, curves=_cv.id).rate(**_pricing))
-            for _y in np.atleast_1d(np.clip(np.asarray(years, dtype=float),
-                                            MIN_FIT_YEARS, MAX_FIT_YEARS))])
+            float(rl.FixedRateBond(effective=_effective, termination=_tenor_date(y),
+                                  fixed_rate=coupon, spec=SPEC).rate(**_pricing))
+            if MIN_FIT_YEARS <= y <= MAX_FIT_YEARS else float("nan")
+            for y in np.atleast_1d(np.asarray(years, dtype=float))])
 
-    # Sanity-check the fit itself before anything downstream trusts it. A
-    # corrupt curve rendering silently is worse than the notebook failing.
-    #
-    # Two different checks, deliberately of different strictness AND of
-    # deliberately different reach:
-    #   - slope: an order invariant (2y < 10y < 30y). A real fitting bug
-    #     violates this; a legitimate market move essentially never does.
-    #     This is the strong signal and stays exactly as tight as it sounds,
-    #     sampled at three points because a SHAPE invariant is what three
-    #     well-separated points are for.
-    #   - level: MIN_SANE_YIELD/MAX_SANE_YIELD is only a data-corruption trip
-    #     wire (catches a units error, e.g. 470% or 0.047%, or a garbage
-    #     fetch) — not a market-regime assertion. It must survive any
-    #     realistic curve, corporate or municipal, across rate regimes, so it
-    #     is kept deliberately wide rather than tuned to "normal" levels.
-    #
-    # The level check runs across the WHOLE tenor grid, not the four sampled
-    # checkpoints it used to. Sampling 2y/5y/10y/30y left the front end
-    # unguarded, which is precisely where this desk's real failure happened: a
-    # -0.625% front bucket calibrated a negative front end, every short bond's
-    # resid_bp was measured against it, and the page rendered without a word.
-    # A band check that cannot see the region most likely to break is not a
-    # band check. Every tenor in the grid is evaluated — including the ones
-    # whose bucket was dropped, because the curve still interpolates or
-    # extrapolates a fair value there and bonds are still ranked against it.
-    _checkpoints = {t: float(curve(t)[0]) for t in (2, 5, 10, 30)}
-    if not (_checkpoints[2] < _checkpoints[10] < _checkpoints[30]):
-        raise ValueError(
-            f"fitted curve is not upward-sloping: {_checkpoints} — "
-            "something upstream (bad yields, wrong window) is corrupting the fit")
-    _grid_ytm = {_t: float(curve(_t)[0]) for _t in _TENORS}
-    _insane = {_t: round(_v, 4) for _t, _v in _grid_ytm.items()
-               if not MIN_SANE_YIELD <= _v <= MAX_SANE_YIELD}
-    if _insane:
-        raise ValueError(
-            f"calibrated curve outside the sane [{MIN_SANE_YIELD}, "
-            f"{MAX_SANE_YIELD}]% band at {_insane} (whole grid: "
-            f"{ {_t: round(_v, 4) for _t, _v in _grid_ytm.items()} }) — this is "
-            "a corruption check, not a rate-regime assertion, so check upstream "
-            "yield data/units before trusting this curve")
-
+    # Yield curves may be flat, inverted or negative. Validate numerical
+    # health rather than imposing a market view on the slope.
+    _grid = curve(np.linspace(MIN_FIT_YEARS, MAX_FIT_YEARS, 50))
+    if not np.isfinite(_grid).all():
+        raise ValueError("calibrated curve has non-finite yields")
     fitted = universe.copy()
     fitted["years"] = _years(fitted["maturity"])
+    _source_indices = set().union(*(set(idx) for _, _, idx in _buckets.values()))
+    fitted["is_fit_source"] = fitted.index.isin(_source_indices)
 
     def _fair_ytm(row):
-        """One bond's fair yield off the calibrated curve, priced by rateslib
-        on that bond's OWN coupon schedule.
-
-        ~3ms a bond, so about 20s across this universe, and deliberately not
-        interpolated from a handful of tenor points: interpolating would put
-        the hand-rolled numpy straight back into the central number, and would
-        throw away exactly the coupon dependence that makes a discount curve
-        worth calibrating.
-
-        A bond rateslib cannot solve returns NaN rather than raising — one bad
-        row must never take down a 6,000-row desk, the same contract
-        bondfile.add_yield keeps."""
+        if (not row["in_fit"] or not
+                MIN_FIT_YEARS <= row["years"] <= MAX_FIT_YEARS):
+            return float("nan")
         try:
-            return float(rl.FixedRateBond(
-                effective=_effective,
+            return float(rl.FixedRateBond(effective=_effective,
                 termination=row["maturity"].to_pydatetime(),
-                fixed_rate=float(row["Coupon"]), spec=SPEC,
-                curves=_cv.id).rate(**_pricing))
+                fixed_rate=float(row["Coupon"]), spec=SPEC).rate(**_pricing))
         except Exception:
             return float("nan")
 
-    fitted["curve_ytm"] = [_fair_ytm(_r) for _, _r in fitted.iterrows()]
-    # Richness in YIELD bp. A fixed price threshold would mean wildly different
-    # dislocations at 2 years and at 30.
-    fitted["resid_bp"] = (fitted["ytm"] - fitted["curve_ytm"]) * 100
-    # Never rank a bond the curve was not allowed to see: neither a bond
-    # excluded from calibration (in_fit == False) nor one outside the tenor
-    # window the curve was actually fit on, even if it is in_fit.
-    fitted["is_ranked"] = (fitted["in_fit"]
-                           & (fitted["years"] > MIN_FIT_YEARS)
-                           & (fitted["years"] < MAX_FIT_YEARS))
-    fitted.loc[~fitted["is_ranked"], "resid_bp"] = np.nan
-
-    # `is_ranked` is exactly the set the curve was calibrated from — assert
-    # it, because the masthead and the tab labels are about to count off it
-    # and a silent divergence would put a number on the page that no bond
-    # backs.
-    if int(fitted["is_ranked"].sum()) != len(_fit):
-        raise ValueError(
-            f"{int(fitted['is_ranked'].sum())} bonds marked ranked but the "
-            f"curve was calibrated from {len(_fit)} — the ranking gate and "
-            "the calibration filter have drifted apart")
-
-    # One label per bond, and the single source everything downstream counts
-    # and tabs off. bondfile.excluded_reason is a true partition of the
-    # universe; this splits its in-fit half by whether the bond is inside the
-    # tenor window the curve was actually fitted on. Counting some buckets off
-    # booleans and others off strings is what produced a rendered tally that
-    # did not reconcile with its own masthead.
+    fitted["curve_ytm"] = [_fair_ytm(r) for _, r in fitted.iterrows()]
+    _valid = np.isfinite(fitted["ytm"]) & np.isfinite(fitted["curve_ytm"])
+    _inside = fitted["years"].between(MIN_FIT_YEARS, MAX_FIT_YEARS)
+    fitted["is_ranked"] = fitted["in_fit"] & _inside & _valid
+    fitted["resid_bp"] = ((fitted["ytm"] - fitted["curve_ytm"]) * 100).where(fitted["is_ranked"])
     fitted["bucket"] = fitted["excluded_reason"].where(
-        ~fitted["in_fit"],
-        np.where(fitted["is_ranked"], "ranked", "outside_window"))
-
-    # The dispersion of the ranking signal. It is the gate on colour — nothing
-    # inside one standard deviation of fair earns green or sienna anywhere on
-    # this page — so it is computed once here rather than re-derived by each
-    # thing that needs it.
-    resid_sd_bp = float(fitted.loc[fitted["is_ranked"], "resid_bp"].std())
+        ~fitted["in_fit"], np.where(~_inside, "outside_window",
+                                  np.where(_valid, "ranked", "no_yield")))
+    _resid = fitted.loc[fitted["is_ranked"], "resid_bp"]
+    if len(_resid) < 2:
+        raise ValueError("fewer than two finite residuals inside the supported curve range")
+    resid_sd_bp = float(_resid.std())
     return (MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, curve, dropped_buckets,
             fitted, n_anchors, resid_sd_bp)
 
@@ -464,7 +252,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
       the spread fan     treasury.py hangs every bill below par by its
                          discount. Par is a real gold line there because a
                          bill genuinely is a promise of 100. Here the datum
-                         is fair value off the fitted credit curve, and each
+                         is benchmark off the fitted credit curve, and each
                          bond hangs off it by its own residual — cheap above,
                          rich below. Same device, different datum.
       the credit surface the working instrument, exactly as the bill curve is
@@ -491,7 +279,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
     # nothing about why.
     _n_noyield = int(_n.get("no_yield", 0))
     if _n.sum() != len(fitted) or set(_n.index) - {
-            "ranked", "outside_window", *fitted["excluded_reason"].unique()}:
+            "ranked", "outside_window", "no_yield", *fitted["excluded_reason"].unique()}:
         raise ValueError(
             f"exclusion tally covers {int(_n.sum())} of {len(fitted):,} bonds "
             f"({_n.to_dict()}) — the buckets are no longer a partition, so "
@@ -638,7 +426,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
     }
     </style>"""
 
-    # Green reads cheap/bid, sienna rich/offer, gold is fair value. Slate is
+    # Green reads cheap/bid, sienna rich/offer, gold is benchmark. Slate is
     # "inside the noise", and it is the default.
     _GREEN, _SIENNA, _GOLD = "#1D9E75", "#D8683C", "#C9A961"
     _SLATE, _RULE = "#93A49B", "#26332C"
@@ -646,7 +434,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
     # Only dislocations beyond one standard deviation earn a colour. Painting
     # every ±1bp residual green or sienna dresses quote noise up as conviction,
     # and on a 6,000-bond universe it would paint the entire page.
-    _sig = resid_sd_bp
+    _sig = max(resid_sd_bp, 1e-8)
 
     def _tone(_v, gate=True):
         """Cheap (yields more than fair) reads green; rich reads sienna."""
@@ -727,7 +515,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
         f'by its residual — cheap above the line, rich below">'
         f'<line x1="{_PADL}" y1="{_DAT}" x2="{_W - _PADR}" y2="{_DAT}" '
         f'stroke="{_GOLD}" stroke-width="1"/>'
-        f'<text x="0" y="{_DAT - 5}" fill="{_GOLD}" font-size="10">fair value</text>'
+        f'<text x="0" y="{_DAT - 5}" fill="{_GOLD}" font-size="10">benchmark</text>'
         f'<text x="0" y="{_FH - 6}" fill="{_SLATE}" font-size="10">'
         f'±{_cap:.0f}bp</text>'
         # Stem colour and weight are set once on the parent and inherited.
@@ -812,16 +600,17 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
     _c2, _c10, _c30 = (float(_v) for _v in curve([2, 10, 30]))
 
     def _tile(_lbl, _val, _sub, unit="%", dp=3):
-        _h, _t = _handle(_val, dp)
+        _h, _t = _handle(_val, dp) if np.isfinite(_val) else ("N/A", "")
         return (f'<div class="fi-stat"><div class="fi-lbl">{_lbl}</div>'
                 f'<div class="fi-num">{_h}<span>{_t}</span><em>{unit}</em></div>'
                 f'<div class="fi-sub">{_sub}</div></div>')
 
-    _stat_html = (_tile("2y", _c2, "fitted curve")
-                  + _tile("10y", _c10, "fitted curve")
-                  + _tile("30y", _c30, "fitted curve")
+    _stat_html = (_tile("2y", _c2, "benchmark; N/A outside anchors")
+                  + _tile("10y", _c10, "benchmark; N/A outside anchors")
+                  + _tile("30y", _c30, "benchmark; N/A outside anchors")
                   + _tile("Dispersion", _sig, "1 sd", unit="bp", dp=1))
     _slope = (_c30 - _c2) * 100
+    _slope_text = f"{_slope:+.0f} bp" if np.isfinite(_slope) else "N/A (outside anchors)"
     _n_signal = int((_drawn["resid_bp"].abs() >= _sig).sum())
 
     def _rows(_df):
@@ -835,7 +624,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
                 f'<td class="fi-r" style="color:{_tone(_v)}">{_v:+.0f}</td></tr>')
         return ('<div class="fi-scroll"><table class="fi-tbl"><thead><tr>'
                 '<th>Bond</th><th class="fi-r">Term</th>'
-                '<th class="fi-r">Yield</th><th class="fi-r">Edge bp</th>'
+                '<th class="fi-r">Yield</th><th class="fi-r">YTM gap bp</th>'
                 '</tr></thead><tbody>' + "".join(_out) + '</tbody></table></div>')
 
     _cheap = _drawn.nlargest(12, "resid_bp")
@@ -849,69 +638,75 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
       <div class="fi-eyebrow">US corporate bonds · evaluated prices ·
         marks of {as_of:%d %b %Y}</div>
       <h2 class="fi-title">The corporate desk</h2>
-      <div class="fi-deck">{len(fitted):,} bonds marked per 100 face by one
-        pricing vendor and fitted to a single credit curve; {_n_ranked:,} of
+      <div class="fi-deck">{len(fitted):,} bonds marked per 100 face from the holdings files and compared with a broad credit benchmark; {_n_ranked:,} of
         them sit inside the tenor window the curve was calibrated on and are
         ranked against it, {_n_var:,} are variable-rate and are not. Colour is
-        reserved for the bonds more than {_sig:.0f}bp from fair — green cheap,
-        sienna rich. Everything inside that is noise at this spread.</div>
+        reserved for the bonds more than {_sig:.0f}bp from the benchmark — green above,
+        sienna below. Dispersion is descriptive, not a statistical significance test.</div>
     </div>""")
 
     # Every limitation the reader needs in order not to be misled. These are
     # rendered, not merely documented, because a desk that hides them lies.
     _caveats = mo.md(
-        "**These are evaluated prices, not executed trades.** They are the "
-        "fund's pricing-vendor marks — good marks, but not a last-trade tape. "
-        "**A retail fill will be worse:** odd-lot spreads on corporate bonds "
-        "are real and wide. Rich/cheap identifies candidates, it does not "
-        "promise a price. **The universe is benchmark-eligible bonds**, so "
-        "small and illiquid issues are absent. **All marks come from one "
-        "vendor** and are not cross-checked. **The curve is fit across "
-        "every credit quality at once** — the holdings file carries no "
-        "rating field, so \"cheapest\" often means lower-rated rather "
-        "than mispriced, and \"richest\" often means higher-rated. Read "
-        "the ranking as a starting point for research, not as a verdict "
-        "on value.")
+        "**Research screen: evaluated holdings marks, not executable quotes.** "
+        "The price ratio is assumed clean (excluding accrued interest); the "
+        "holdings file does not establish that basis. Yields use the file's "
+        "valuation date as settlement, not a new trade's T+1 settlement. "
+        "**Regular semiannual USD bullet cash flows are assumed.** Issue dates, "
+        "stub coupons, amortization and call schedules are unavailable. "
+        "YTM is not yield-to-worst; modified duration is not option-adjusted "
+        "duration. Recognized variable-rate notes have no fixed-coupon analytics. "
+        "**YTM gaps are not OAS, credit spreads or trading alpha.** This "
+        "synthetic median-bucket benchmark mixes ratings, issuers, seniorities, "
+        "liquidity and embedded options. A positive gap need not mean cheap. "
+        "The plotted line uses a reference coupon; each residual uses the "
+        "individual bond's coupon. One cross-sectional standard deviation "
+        "does not estimate quote noise or establish statistical significance. "
+        "Confirm terms, price basis, credit quality and executable prices "
+        "before using a row for investment decisions.")
 
     # Everything the caveats have earned the right to show: the fan, the four
     # numbers, the verdict, the surface, and the two ends of the ranking.
     _body = mo.Html(f"""
     <div class="fi">
       <div class="fi-rail">{_fan}
-        <div class="fi-cap">{_n_drawn:,} bonds hung off fair value ·
+        <div class="fi-cap">{_n_drawn:,} bonds hung off benchmark ·
           1sd = {_sig:.0f}bp · stems clipped at ±{_cap:.0f}bp"""
         + (f" · {_unplaced:,} ranked but unpriced by the curve, so not drawn"
            if _unplaced else "")
         + f"""</div></div>
       <div class="fi-stats">{_stat_html}</div>
       <div class="fi-slope">Two years to thirty
-        <b style="color:{_tone(_slope)}">{_slope:+.0f} bp</b> ·
-        the credit curve pays that much for twenty-eight more years of
-        duration, and <b>{_n_signal:,}</b> of {_n_drawn:,} ranked bonds sit
-        further than {_sig:.0f}bp from it — the rest is inside the noise.</div>
+        <b style="color:{_tone(_slope)}">{_slope_text}</b> ·
+        the difference in reference-coupon YTM over twenty-eight years of
+        maturity, and <b>{_n_signal:,}</b> of {_n_drawn:,} ranked bonds sit
+        further than {_sig:.0f}bp from it — this is cross-sectional dispersion, not a confidence interval.</div>
       <div class="fi-panel">{_surface}
         <div class="fi-cap">
           <span class="fi-k fi-k-line" style="border-color:{_GOLD}"></span>
             Calibrated curve
           <span class="fi-k fi-k-dot" style="background:{_GOLD};
             border-radius:0"></span>Anchor tenor
-          <span class="fi-k fi-k-dot"></span>Cheap
-          <span class="fi-k fi-k-dot" style="background:{_SIENNA}"></span>Rich
+          <span class="fi-k fi-k-dot"></span>Higher YTM
+          <span class="fi-k fi-k-dot" style="background:{_SIENNA}"></span>Lower YTM
           <span class="fi-k fi-k-dot" style="background:{_SLATE}"></span>
-            Inside 1 sd</div></div>
+            Within 1 sd</div></div>
       <div class="fi-grid">
-        <div><div class="fi-h">Cheapest to the curve</div>
-          <div class="fi-note">Yield above fair. The holdings file carries no
-            rating, so read the top of this list as <b>lower-rated</b> until
-            research says otherwise.</div>{_rows(_cheap)}</div>
-        <div><div class="fi-h">Richest to the curve</div>
-          <div class="fi-note">Yield below fair — and for the same reason,
-            usually <b>higher-rated</b> rather than expensive.</div>
+        <div><div class="fi-h">Largest positive YTM gaps</div>
+          <div class="fi-note">Yield above the benchmark. The holdings file carries no
+            rating, so credit quality, options and liquidity can explain the gap.</div>{_rows(_cheap)}</div>
+        <div><div class="fi-h">Largest negative YTM gaps</div>
+          <div class="fi-note">Yield below the benchmark — and for the same reason,
+            credit quality, options and liquidity can explain the gap.</div>
           {_rows(_rich)}</div>
       </div>
     </div>""")
 
     _notes = [_head, _caveats, _body]
+    from datetime import date as _date
+    _age = (_date.today() - as_of.date()).days
+    if _age > 7:
+        _notes.append(mo.md(f"**Stale holdings:** these marks are {_age} calendar days old."))
     if failed:
         _notes.append(mo.md(
             f"⚠️ {len(failed)} of 3 holdings files failed to load "
@@ -946,19 +741,17 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, anchor_tenors, as_of, curve, dropped,
             f"{n_anchors + len(dropped_buckets)} tenors**, having dropped "
             f"{_which} — a bucket too thin, or medianing outside the sanity "
             "band, is not a point on a credit curve and is refused rather "
-            "than calibrated to. Fair value at and around those tenors is "
-            "interpolated or extrapolated from the anchors that remain, so "
-            "read residuals there with correspondingly less weight.")
+            "than calibrated to. Interior gaps use interpolation; "
+            "bonds beyond the surviving anchors are not ranked.")
+    _n_sources = int(fitted["is_fit_source"].sum())
     _notes.append(mo.md(
-        f"**Held out of the curve fit:** {_n_var:,} variable-rate, "
-        f"{_n_dist:,} distressed, {_n_noyield:,} unpriced. One reason each — "
-        f"these are cut from a single mutually-exclusive label — so with the "
-        f"{_n_ranked + _n_window:,} fit-eligible bonds they account for all "
-        f"{len(fitted):,} rows above, and every one of them is named in a tab "
-        f"below. Of the fit-eligible bonds, **{_n_window:,} sit outside the "
-        f"[{MIN_FIT_YEARS}, {MAX_FIT_YEARS}]-year window the curve was "
-        f"calibrated on**, so they carry no residual and are not ranked; "
-        f"**{_n_ranked:,}** actually calibrated the curve.{_bucket_note}"))
+        f"**Universe partition:** {_n_ranked:,} ranked, {_n_window:,} outside "
+        f"the supported [{MIN_FIT_YEARS:.2f}, {MAX_FIT_YEARS:.2f}]y anchor range, "
+        f"{_n_var:,} variable-rate, {_n_dist:,} distressed and {_n_noyield:,} "
+        f"unpriced (observed or benchmark yield unavailable). "
+        f"{_n_sources:,} distinct bonds contributed to {n_anchors} bucket "
+        f"targets; ranking eligibility and calibration contribution differ. "
+        f"No extrapolated residuals are ranked.{_bucket_note}"))
     mo.vstack(_notes)
     return FI_CSS, FI_EXTRA
 
@@ -978,7 +771,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, fitted, mo):
     Cheapest and Richest are the extremes of On the curve and repeat its rows
     deliberately."""
     _COLS = ["Identifier", "Name", "Coupon", "maturity", "years",
-             "price", "ytm", "mod_duration", "resid_bp", "source"]
+             "price", "ytm", "mod_duration", "curve_ytm", "resid_bp", "source"]
 
     def _tab(df, sort, ascending=True):
         return mo.ui.table(
@@ -989,7 +782,7 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, fitted, mo):
     # label, sort column, ascending
     _PARTITION = {
         "ranked": ("On the curve", "years", True),
-        "outside_window": (f"Outside the [{MIN_FIT_YEARS}, {MAX_FIT_YEARS}]y "
+        "outside_window": (f"Outside the [{MIN_FIT_YEARS:.2f}, {MAX_FIT_YEARS:.2f}]y "
                            "fit window", "years", True),
         "variable_rate": ("Variable rate", "years", True),
         "distressed": ("Distressed", "ytm", False),
@@ -1009,8 +802,8 @@ def _(MAX_FIT_YEARS, MIN_FIT_YEARS, fitted, mo):
     _rich = _ranked.nsmallest(25, "resid_bp")
 
     mo.ui.tabs({
-        f"Cheapest ({len(_cheap)})": _tab(_cheap, "resid_bp", False),
-        f"Richest ({len(_rich)})": _tab(_rich, "resid_bp", True),
+        f"Higher YTM ({len(_cheap)})": _tab(_cheap, "resid_bp", False),
+        f"Lower YTM ({len(_rich)})": _tab(_rich, "resid_bp", True),
         **{f"{_lbl} ({len(_by[_k]):,})": _tab(_by[_k], _sort, _asc)
            for _k, (_lbl, _sort, _asc) in _PARTITION.items()},
     })

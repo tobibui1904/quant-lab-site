@@ -11,7 +11,9 @@ anonymous `def _()` and cannot be imported, and these functions must be tested.
 """
 import io
 import re
+import math
 
+import numpy as np
 import pandas as pd
 import rateslib as rl
 
@@ -51,7 +53,7 @@ def read_holdings(source):
 
     as_of = None
     for cell in preamble.astype(str).to_numpy().ravel():
-        m = re.search(r"As of (\d{1,2}-[A-Za-z]{3}-\d{4})", cell)
+        m = re.search(r"As of (\d{1,2}-[A-Za-z]{3}-\d{4})", str(cell))
         if m:
             as_of = pd.to_datetime(m.group(1), format="%d-%b-%Y")
             break
@@ -98,19 +100,24 @@ def clean_rows(df, as_of):
     work["reason"] = pd.NA
 
     ident = work["Identifier"].astype(str).str.strip()
+    work["Identifier"] = ident
     work.loc[~ident.str.fullmatch(ISIN) & work["reason"].isna(),
              "reason"] = "identifier"
 
     par = pd.to_numeric(work["Par Value"], errors="coerce")
     mv = pd.to_numeric(work["Market Value"], errors="coerce")
-    work.loc[~((par > 0) & (mv > 0)) & work["reason"].isna(),
+    work.loc[~((par > 0) & (mv > 0) & np.isfinite(par) & np.isfinite(mv)) & work["reason"].isna(),
              "reason"] = "amounts"
+    coupon = pd.to_numeric(work["Coupon"], errors="coerce")
+    work.loc[~(np.isfinite(coupon) & (coupon >= 0)) & work["reason"].isna(),
+             "reason"] = "coupon"
+    work["Coupon"] = coupon
 
     # Explicit format: an ambiguous date must fail loudly, not be reinterpreted.
     mat = pd.to_datetime(work["Maturity"], format="%m/%d/%Y", errors="coerce")
     work.loc[mat.isna() & work["reason"].isna(), "reason"] = "no_maturity"
     work.loc[(mat <= as_of) & work["reason"].isna(), "reason"] = "matured"
-    near = as_of + pd.Timedelta(days=MIN_YEARS_TO_MATURITY * 365.25)
+    near = as_of + pd.Timedelta(days=MIN_YEARS_TO_MATURITY * 365)
     work.loc[(mat <= near) & work["reason"].isna(), "reason"] = "near_maturity"
 
     work["maturity"] = mat
@@ -162,6 +169,8 @@ def add_yield(df, as_of, spec):
     ytms, durs = [], []
     for _, row in df.iterrows():
         try:
+            if _VARIABLE.search(str(row.get("Name", "")).upper()):
+                raise ValueError("reset schedule required for variable-rate analytics")
             price = float(row["price"])
             # Zero (or negative) price has no finite yield: YTM only approaches
             # infinity as price approaches zero, it is never reached. Guarding
@@ -169,14 +178,18 @@ def add_yield(df, as_of, spec):
             # reliably raise on this input — with a long enough coupon
             # schedule it can converge on a nonsense four-digit "yield"
             # instead of failing, which the broad except below would not catch.
-            if price <= 0:
+            if not math.isfinite(price) or price <= 0:
                 raise ValueError("price must be positive; yield is undefined at zero")
             bond = rl.FixedRateBond(
                 effective=effective,
                 termination=row["maturity"].to_pydatetime(),
                 fixed_rate=float(row["Coupon"]), spec=spec)
-            y = float(bond.ytm(price=price, settlement=settle))
+            # The holdings ratio is treated as CLEAN; do not silently change
+            # this assumption without confirming the vendor's price basis.
+            y = float(bond.ytm(price=price, settlement=settle, dirty=False))
             d = float(bond.duration(ytm=y, settlement=settle, metric="modified"))
+            if not (math.isfinite(y) and math.isfinite(d) and d > 0):
+                raise ValueError("non-finite yield or invalid duration")
         except Exception:
             y, d = float("nan"), float("nan")
         ytms.append(y)
@@ -286,8 +299,8 @@ def build_sector(files, spec):
     a sector overlap heavily by design — they are short, intermediate and broad
     slices of the same market.
 
-    If the files disagree on as-of date the OLDEST wins, because pricing part of
-    a curve a day forward of the rest is worse than pricing all of it a day late.
+    All files must share a valuation date. Relabelling a newer quote with an
+    older date does not synchronize prices and introduces false residuals.
 
     `files` maps ticker -> a path or raw bytes (production hands over bytes
     fetched via HTTP; read_holdings accepts either).
@@ -304,7 +317,10 @@ def build_sector(files, spec):
         frames.append(kept)
         drops.append(dropped.assign(source=ticker))
 
-    as_of = min(as_ofs)
+    if len(set(as_ofs)) != 1:
+        dates = {ticker: str(date.date()) for ticker, date in zip(files, as_ofs)}
+        raise ValueError(f"holdings have inconsistent valuation dates: {dates}")
+    as_of = as_ofs[0]
     universe = pd.concat(frames, ignore_index=True)
     # Deduplicate BEFORE pricing, not after. The three files of a sector overlap
     # heavily, so pricing first meant solving a yield for every duplicate and
