@@ -1685,8 +1685,15 @@ async def alpaca_close(symbol: str):
         return {"ok": False, "error": str(e)[:200]}
 
 # Hub output assistant (read-only). Off unless AI_ENABLED=1; see agent_diag/api.py.
-# The desk ids are passed in so agent_diag never imports this module.
-hub.include_router(make_agent_router(desk_ids={"hub"} | {nb["id"] for nb in NOTEBOOKS}))
+# The desk ids and the dashboard's own read-only account routes are passed in so
+# agent_diag never imports this module and sees exactly what the dashboard shows.
+hub.include_router(make_agent_router(
+    desk_ids={"hub"} | {nb["id"] for nb in NOTEBOOKS},
+    account_sources={
+        "oanda": {"account": oanda_account, "positions": oanda_positions},
+        "alpaca": {"account": alpaca_account, "positions": alpaca_positions},
+    },
+))
 
 # Mounted last: Mount("/") matches every path, so the hub's own routes above
 # must be registered first to win. Each notebook keeps its own prefix
