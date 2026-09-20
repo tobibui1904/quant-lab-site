@@ -1822,6 +1822,11 @@ def _(
     # whole universe (not just today's legs) means a position left over from a
     # switched-away strategy is driven back to target 0 — i.e. closed out.
     managed_tickers = list(results["trade_log"]["ticker"].unique())
+    # Outcome per managed ticker, handed to the hub assistant's run record after
+    # this cell (agent_diag/record.py). Never affects what is ordered.
+    letf_exec = {"signal_date": None, "rows": []}
+    if not today_df.empty:
+        letf_exec["signal_date"] = str(today_df["date"].iloc[-1])[:10]
 
     # Today's target position per ticker (chosen strategy only). Anything absent
     # defaults to target 0 below and gets flattened.
@@ -1838,11 +1843,16 @@ def _(
         target  = int(round(target_by_ticker.get(symbol, 0.0)))
         current = int(round(_current_position_qty(symbol)))
         delta   = target - current
+        _leg = {"symbol": symbol, "target": target, "current": current, "delta": delta,
+                "side": None, "outcome": "no change"}
+        letf_exec["rows"].append(_leg)
 
         if delta == 0:
             continue   # already at target (includes flat tickers we don't hold)
 
         side    = OrderSide.BUY if delta > 0 else OrderSide.SELL
+        _leg["side"] = side.value.upper()
+        _leg["outcome"] = "unknown"
         abs_qty = abs(delta)
 
         req = MarketOrderRequest(
@@ -1854,13 +1864,30 @@ def _(
 
         try:
             order = trade_client.submit_order(req)
+            _leg["outcome"] = "submitted"
+            _leg["order_ref"] = str(order.id)
             log(
                 f"✅ `{side.value.upper()} {symbol}` — "
                 f"qty={abs_qty} (target {target}, was {current}) | order_id=`{order.id}`",
                 kind="success"
             )
         except Exception as e:
+            _leg["outcome"] = "failed"
             log(f"❌ Order failed for `{symbol}`: {e}", kind="danger")
+    return (letf_exec,)
+
+
+@app.cell
+def _(exec_button, letf_exec, results, selected_row, today_df):
+    # Hub assistant run record: the selected triple, the regime-chosen strategy
+    # and its risk metrics, today's targets, and each reconciling order. Runs
+    # after the orders above and never raises; see agent_diag/record.py.
+    import agent_diag.record as _agent_record
+
+    if exec_button.value:
+        _agent_record.record_letf(
+            dict(selected_row), results, today_df, letf_exec
+        )
     return
 
 
