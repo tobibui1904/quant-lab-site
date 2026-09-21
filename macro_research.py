@@ -233,6 +233,15 @@ def _(ThreadPoolExecutor, date, mo, os, pathlib, pd, requests):
         for s, d in _vintage.sort_values().items()
     )
 
+    # Input vintage for the hub assistant's run record, written by the last cell.
+    fred_vintage = {
+        "months": int(df.shape[0]),
+        "series": int(df.shape[1]),
+        "months_behind": int(_months_ff),
+        "stalest_series": str(_vintage.idxmin()),
+        "latest_month": df.index[-1].strftime("%Y-%m"),
+    }
+
     mo.callout(mo.md(
         f"""✅ **FRED macro variables collected** — {df.shape[0]} months × {df.shape[1]} series,
 through **{df.index[-1].date()}**.
@@ -242,7 +251,7 @@ Slowest-publishing series is {_months_ff} month(s) behind and is forward-filled
 
 {_vintage_md}"""
     ), kind="success")
-    return (df,)
+    return df, fred_vintage
 
 
 @app.cell
@@ -931,6 +940,7 @@ def _(
     df_master,
     df_scaled,
     fa,
+    fred_vintage,
     go,
     latest_factors,
     loadings_named,
@@ -1730,11 +1740,18 @@ def _(
     """
 
     # ── 9. Render (Marimo) ───────────────────────────────────────────────────
-    mo.vstack([
+    _view = mo.vstack([
         mo.ui.plotly(fig_driver_cmc),
         mo.Html(driver_delta_html),
         mo.Html(_var_html),
     ])
+
+    # Hub assistant run record: input vintage, model shape, and each scenario's
+    # outcome. This desk places no orders; the record never raises.
+    import agent_diag.record as _agent_record
+    _agent_record.record_macro(scenario_outputs, df_impact, df_master, vintage=fred_vintage)
+
+    _view
     return
 
 
