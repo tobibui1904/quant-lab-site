@@ -1291,7 +1291,7 @@ def _(df, df_final_signals, mo):
         label=f"⚠ Submit {len(orders_to_place)} live order(s) to OANDA", kind="danger"
     )
 
-    mo.vstack([
+    _view = mo.vstack([
         mo.md(f"**{len(orders_to_place)} order(s) staged.**"
               + (f" Skipping {len(untradable)} untradable instrument(s): "
                  f"{', '.join(untradable['instrument'])}." if len(untradable) else "")),
@@ -1302,6 +1302,13 @@ def _(df, df_final_signals, mo):
         ),
         execute_btn,
     ])
+
+    # Hub assistant run record: the staged plan, before anything is submitted.
+    # The submit cell below updates this same record with the outcome.
+    import agent_diag.record as _agent_record
+    _agent_record.record_forex(orders_to_place, None, untradable=len(untradable))
+
+    _view
     return execute_btn, orders_to_place
 
 
@@ -1354,6 +1361,13 @@ def _(ACCOUNT_ID, OANDA_BASE, execute_btn, headers, mo, orders_to_place, pd, req
         print(f"  → {row_ord['instrument']} {row_ord['units']:+d} [{status_code}] filled={filled}")
 
     df_results = pd.DataFrame(results)
+
+    # Hub assistant run record: the same day's record, now with each order's
+    # HTTP status and whether OANDA reported a fill. Runs after every order
+    # above and never raises; see agent_diag/record.py.
+    import agent_diag.record as _agent_record
+    _agent_record.record_forex(orders_to_place, df_results)
+
     mo.ui.dataframe(df_results)
     return
 
