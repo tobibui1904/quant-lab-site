@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.23.9"
-app = marimo.App(width="medium", css_file="theme.css", html_head_file="theme_head.html")
+app = marimo.App(width="medium", css_file="../../theme.css", html_head_file="../../theme_head.html")
 
 
 @app.cell
@@ -23,6 +23,11 @@ def _():
     import plotly.graph_objects as go_diag
     from plotly.subplots import make_subplots
     import marimo as mo
+
+    # market_cache is shared with the Macro desk, so it lives in <root>/shared.
+    _shared = str(pathlib.Path(mo.notebook_dir()).parents[1] / "shared")
+    if _shared not in sys.path:
+        sys.path.insert(0, _shared)
     import plotly.graph_objects as go
     from datetime import date
     from dotenv import load_dotenv
@@ -35,10 +40,10 @@ def _():
         if hasattr(_stream, "reconfigure"):
             _stream.reconfigure(encoding="utf-8")
 
-    # The Alpaca/FRED keys live in .env next to the notebook; without this the
+    # The Alpaca/FRED keys live in .env in the Quant root; without this the
     # sector cell only works when they happen to be set in the OS environment.
     # (assign to _ so marimo doesn't render load_dotenv's bool return).
-    _ = load_dotenv(mo.notebook_dir() / ".env")
+    _ = load_dotenv(mo.notebook_dir().parents[1] / ".env")
 
     return (
         FactorAnalysis,
@@ -146,51 +151,27 @@ def _(ThreadPoolExecutor, date, mo, os, pathlib, pd, requests):
     API_KEY  = os.environ.get('FRED_API_KEY', '')
 
     START_DATE = '2016-01-01'
-    END_DATE   = date.today().isoformat()
+    import logging as _logging
+    import market_cache as _market_cache
+    END_DATE   = _market_cache.market_day()
 
     MONTHLY = ['INDPRO', 'DGORDER', 'UMCSENT', 'CPIAUCSL', 'CPILFESL', 'PPIACO', 'FEDFUNDS', 'UNRATE', 'CES0500000003']
     WEEKLY  = ['ICSA']
     DAILY   = ['DCOILWTICO', 'GASREGCOVW', 'DGS2', 'DGS10', 'BAA10Y', 'DTWEXBGS']
 
-    # Raw observations are cached per (series, day) so a notebook reload is free.
-    FRED_CACHE = pathlib.Path('.fredcache')
-    FRED_CACHE.mkdir(exist_ok=True)
-
+    # Persistent cache in R2; decoded observations and analytics stay in RAM.
+    _cloud_cache = _market_cache.get_cache()
     _fred_session = requests.Session()
 
     def fetch_fred(series_id, resample=None):
-        cache_file = FRED_CACHE / f"{series_id}_{END_DATE}.parquet"
-
-        if cache_file.exists():
-            raw = pd.read_parquet(cache_file)
-        else:
-            params = {
-                'api_key':           API_KEY,
-                'series_id':         series_id,
-                'file_type':         'json',
-                'observation_start': START_DATE,
-                'observation_end':   END_DATE,
-            }
-            try:
-                res  = _fred_session.get(URL, params=params, timeout=30)
-                data = res.json()
-            except Exception as exc:                      # network / decode failure
-                print(f"Error fetching {series_id}: {exc}")
-                return pd.DataFrame()
-
-            if 'observations' not in data:
-                print(f"Error fetching {series_id}: {data}")
-                return pd.DataFrame()
-
-            raw = (pd
-                .DataFrame(data['observations'])
-                .drop(columns=['realtime_start', 'realtime_end'])
-                .rename(columns={'value': series_id})
-                .astype({'date': 'datetime64[ns]'})
-                .set_index('date')
-                .apply(pd.to_numeric, errors='coerce')
-            )
-            raw.to_parquet(cache_file)
+        try:
+            raw = _cloud_cache.fred(series_id, START_DATE, END_DATE, API_KEY, _fred_session)
+        except _market_cache.CacheError:
+            raise
+        except Exception as _exc:
+            _logging.getLogger("market_cache").warning(
+                "FRED unavailable for %s (%s)", series_id, type(_exc).__name__)
+            return pd.DataFrame()
 
         if resample == 'last':
             return raw.resample('ME').last()
@@ -233,15 +214,6 @@ def _(ThreadPoolExecutor, date, mo, os, pathlib, pd, requests):
         for s, d in _vintage.sort_values().items()
     )
 
-    # Input vintage for the hub assistant's run record, written by the last cell.
-    fred_vintage = {
-        "months": int(df.shape[0]),
-        "series": int(df.shape[1]),
-        "months_behind": int(_months_ff),
-        "stalest_series": str(_vintage.idxmin()),
-        "latest_month": df.index[-1].strftime("%Y-%m"),
-    }
-
     mo.callout(mo.md(
         f"""✅ **FRED macro variables collected** — {df.shape[0]} months × {df.shape[1]} series,
 through **{df.index[-1].date()}**.
@@ -251,7 +223,7 @@ Slowest-publishing series is {_months_ff} month(s) behind and is forward-filled
 
 {_vintage_md}"""
     ), kind="success")
-    return df, fred_vintage
+    return (df,)
 
 
 @app.cell
@@ -940,7 +912,6 @@ def _(
     df_master,
     df_scaled,
     fa,
-    fred_vintage,
     go,
     latest_factors,
     loadings_named,
@@ -1740,18 +1711,11 @@ def _(
     """
 
     # ── 9. Render (Marimo) ───────────────────────────────────────────────────
-    _view = mo.vstack([
+    mo.vstack([
         mo.ui.plotly(fig_driver_cmc),
         mo.Html(driver_delta_html),
         mo.Html(_var_html),
     ])
-
-    # Hub assistant run record: input vintage, model shape, and each scenario's
-    # outcome. This desk places no orders; the record never raises.
-    import agent_diag.record as _agent_record
-    _agent_record.record_macro(scenario_outputs, df_impact, df_master, vintage=fred_vintage)
-
-    _view
     return
 
 
