@@ -3,8 +3,8 @@ import marimo
 __generated_with = "0.23.16"
 app = marimo.App(
     width="medium",
-    css_file="theme.css",
-    html_head_file="theme_head.html",
+    css_file="../../theme.css",
+    html_head_file="../../theme_head.html",
 )
 
 
@@ -410,17 +410,7 @@ def _(
 
 
     async def pm_trader_agent(messages, config):
-        # Hub assistant run record: which tools this turn called and what they
-        # returned. The question and the broker's prose are never recorded, and
-        # the recorder never raises; see agent_diag/record.py.
-        import agent_diag.record as _agent_record
-
         history = [SYSTEM_PROMPT] + [{"role": m.role, "content": m.content} for m in messages]
-        turn_calls = []
-
-        def record_turn(hop_limit=False, mcp_down=False):
-            _agent_record.record_pred_market(turn_calls, account=ACCOUNT,
-                                             hop_limit=hop_limit, mcp_down=mcp_down)
 
         max_tool_hops = 8
         last_tool_had_error = False
@@ -429,7 +419,6 @@ def _(
 
         for hop in range(max_tool_hops):
             if not mcp_manager.is_alive():
-                record_turn(mcp_down=True)
                 return "[error: MCP server connection has died — restart the notebook/kernel]"
 
             resp = await asyncio.to_thread(
@@ -459,7 +448,6 @@ def _(
                         f"(rendered directly from the tool result, not retyped by the model):\n\n"
                         f"{last_verified_table}"
                     )
-                record_turn()
                 return final
 
             last_tool_had_error = False
@@ -519,9 +507,6 @@ def _(
                             content = f"TOOL ERROR calling {name}: {e}"
                             table = None
 
-                turn_calls.append({"tool": name, "ok": not _is_error_content(content),
-                                   "result": content})
-
                 if _is_error_content(content):
                     last_tool_had_error = True
                     last_verified_table = None
@@ -538,7 +523,6 @@ def _(
                     "tool_name": name,
                 })
 
-        record_turn(hop_limit=True)
         return "[stopped: hit tool-call limit for this turn]"
 
     return (pm_trader_agent,)
