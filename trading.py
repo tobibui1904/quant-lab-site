@@ -1,7 +1,7 @@
 import duckdb
 
 # create a connection to a file called 'file.db'
-con = duckdb.connect("quant_trading.db")
+con = duckdb.connect("data/quant_trading.db")
 # create a table and load data into it
 # con.sql("CREATE TABLE Assets (id INTEGER PRIMARY KEY, sector VARCHAR NOT NULL, Asset1 VARCHAR NOT NULL, Asset2 VARCHAR NOT NULL)")
 # con.sql("CREATE TABLE Portfolio (id INTEGER)")

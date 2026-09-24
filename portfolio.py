@@ -37,7 +37,7 @@ def _get_api():
     # tracked file, and — because the secret was read from ALPACA_SECRET while
     # every other module writes ALPACA_API_SECRET — the env override never
     # matched and this always authenticated with the baked-in value.
-    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env"))
 
     api_key = os.environ.get("ALPACA_API_KEY")
     api_secret = os.environ.get("ALPACA_API_SECRET")
@@ -53,7 +53,7 @@ def _get_api():
 
 # --- Pipeline functions ---
 
-def data(pair_file="pair.txt", start_date="2019-01-01"):
+def data(pair_file="data/pair.txt", start_date="2019-01-01"):
     api = _get_api()
     tickers = ["AMZN", "AAPL", "MSFT", "GOOG", "NVDA", "TSM", "IBM"]
 
@@ -199,7 +199,7 @@ def cross_predict(model_hrp, model_herc, X_test, cv):
 def statistics_report(population):
     return population.summary()
 
-def portfolio_ratio_duckdb(model, db_path="quant_trading.db"):
+def portfolio_ratio_duckdb(model, db_path="data/quant_trading.db"):
     # If model is a Population (CPCV result), pick the best portfolio by CVaR ratio
     if isinstance(model, Population):
         model = model.max_measure(RatioMeasure.CVAR_RATIO)
