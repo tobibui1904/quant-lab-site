@@ -1,7 +1,11 @@
 import marimo
 
-__generated_with = "0.23.9"
-app = marimo.App(width="medium", css_file="theme.css", html_head_file="theme_head.html")
+__generated_with = "0.24.2"
+app = marimo.App(
+    width="medium",
+    css_file="../../theme.css",
+    html_head_file="../../theme_head.html",
+)
 
 
 @app.cell
@@ -36,11 +40,10 @@ def _():
         if hasattr(_stream, "reconfigure"):
             _stream.reconfigure(encoding="utf-8")
 
-    # Load .env from the notebook's own directory, not the cwd marimo happens to
+    # Load .env from the Quant root (two levels up), not the cwd marimo happens to
     # be launched from. Real environment variables still win over the file.
     # (Assign to _ so marimo doesn't render load_dotenv's True as cell output.)
     _ = load_dotenv(Path(__file__).resolve().parent / ".env")
-
     return (
         AutoModelForSequenceClassification,
         AutoTokenizer,
@@ -137,7 +140,7 @@ def _(os, pd, requests):
     if not token:
         raise RuntimeError(
             "OANDA_TOKEN is not set.\n"
-            "  Add it to the .env file next to this notebook (it is gitignored):\n"
+            "  Add it to the .env file in the Quant root folder (it is gitignored):\n"
             "      OANDA_TOKEN=your-token-here\n"
             "  or export it in your shell. Note that everything downstream of this\n"
             "  cell — instruments, ARA predictions, sizing, execution — depends on\n"
@@ -244,6 +247,7 @@ def _(section_header):
 
 @app.cell
 def _(Path, df_filtered, hf_hub_download, mo, np, os, pd, sys):
+    # AraAI is its own git clone, kept beside this notebook in desks/forex/.
     ARA_PATH = os.environ.get("ARA_AI_PATH") or str(Path(__file__).resolve().parent / "AraAI")
     if ARA_PATH not in sys.path:
         sys.path.insert(0, ARA_PATH)
@@ -1303,17 +1307,21 @@ def _(df, df_final_signals, mo):
         execute_btn,
     ])
 
-    # Hub assistant run record: the staged plan, before anything is submitted.
-    # The submit cell below updates this same record with the outcome.
-    import agent_diag.record as _agent_record
-    _agent_record.record_forex(orders_to_place, None, untradable=len(untradable))
-
     _view
     return execute_btn, orders_to_place
 
 
 @app.cell
-def _(ACCOUNT_ID, OANDA_BASE, execute_btn, headers, mo, orders_to_place, pd, requests):
+def _(
+    ACCOUNT_ID,
+    OANDA_BASE,
+    execute_btn,
+    headers,
+    mo,
+    orders_to_place,
+    pd,
+    requests,
+):
     # HARD GATE. This cell posts real market orders. Without it, every reactive
     # re-run of the notebook — refreshing news, toggling an override — would
     # silently fire the whole order book again.
@@ -1361,12 +1369,6 @@ def _(ACCOUNT_ID, OANDA_BASE, execute_btn, headers, mo, orders_to_place, pd, req
         print(f"  → {row_ord['instrument']} {row_ord['units']:+d} [{status_code}] filled={filled}")
 
     df_results = pd.DataFrame(results)
-
-    # Hub assistant run record: the same day's record, now with each order's
-    # HTTP status and whether OANDA reported a fill. Runs after every order
-    # above and never raises; see agent_diag/record.py.
-    import agent_diag.record as _agent_record
-    _agent_record.record_forex(orders_to_place, df_results)
 
     mo.ui.dataframe(df_results)
     return
