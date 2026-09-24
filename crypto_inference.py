@@ -1219,6 +1219,8 @@ def _(
     results,
     trade_client,
 ):
+    import agent_diag.record as _agent_record  # hub assistant run record
+
     ##############################################################################
     # DISPLAY HELPERS
     ##############################################################################
@@ -1313,6 +1315,9 @@ def _(
         ACTION_COLOR = {"BUY": "#1D9E75", "SELL": "#D85A30", "HOLD": "#888787"}
         PAIR_DISPLAY = {"btc": "BTC/USD", "eth": "ETH/USD", "etb": "ETH/BTC"}
 
+        # Outcome per pair, handed to the hub assistant's run record below.
+        exec_rows = []
+
         cards = ""
         for pair, symbol in [("btc","BTC/USD"), ("eth","ETH/USD"), ("etb","ETH/BTC")]:
             action = str(row[f"{pair}_action"]).upper()
@@ -1320,10 +1325,14 @@ def _(
             color  = ACTION_COLOR.get(action, "#e8eaf0")
             label  = PAIR_DISPLAY[pair]
 
+            leg = {"symbol": symbol, "action": action, "quantity": qty, "outcome": "unknown"}
+            exec_rows.append(leg)
             try:
                 execute_signal(symbol=symbol, action=action, quantity=qty)
+                leg["outcome"] = "submitted" if action in ("BUY", "SELL") else "skipped: hold"
                 status_html = '<span style="color:#1D9E75;">✓ submitted</span>'
             except Exception as e:
+                leg["outcome"] = "failed"
                 status_html = f'<span style="color:#D85A30;">✗ {e}</span>'
 
             cards += f"""
@@ -1335,6 +1344,10 @@ def _(
               </div>
               <div style="font-size:11px;font-family:'DM Mono',monospace;margin-top:6px;">{status_html}</div>
             </div>"""
+
+        # Hub assistant run record: this bar's signals and what each submission
+        # did. Runs after every order above and never raises.
+        _agent_record.record_crypto(results, exec_rows, executed=True)
 
         return mo.Html(f"""
         <div style="background:#0a0b0e;border:1px solid #1e2130;border-radius:6px;padding:20px;margin-bottom:16px;">
@@ -1354,6 +1367,9 @@ def _(
     if exec_button.value:
         exec_section = render_execution_log(results)
     else:
+        # Signals only: recorded before anything is submitted, and updated by
+        # render_execution_log once the button is pressed.
+        _agent_record.record_crypto(results, None, executed=False)
         exec_section = mo.callout(
             mo.md("Press **⚡ Execute Today's Signals** above to submit today's orders."),
             kind="info",
