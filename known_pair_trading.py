@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.23.9"
-app = marimo.App(width="full", css_file="theme.css", html_head_file="theme_head.html")
+app = marimo.App(width="full", css_file="../../theme.css", html_head_file="../../theme_head.html")
 
 
 @app.cell
@@ -94,11 +94,10 @@ def _():
     import pathlib
     from skfolio import RatioMeasure
 
-    # ML libraries
-    import itertools
-    from prophet import Prophet
-    from prophet.diagnostics import cross_validation
-    from prophet.diagnostics import performance_metrics
+    # Prophet is imported lazily by the entry filter so failed fits block
+    # entries without disabling the existing mean-reversion/stop-loss exits.
+    from pair_forecast import ProphetEntryFilter
+    from pair_execution import check_pair_exits, submit_pair_entries
 
     # DuckDB for SQL-like queries
     import duckdb
@@ -117,7 +116,7 @@ def _():
         OLS,
         OrderSide,
         Parallel,
-        Prophet,
+        ProphetEntryFilter,
         Query,
         REST,
         RatioMeasure,
@@ -127,19 +126,18 @@ def _():
         add_constant,
         adfuller,
         coint,
+        check_pair_exits,
         col,
-        cross_validation,
         delayed,
         duckdb,
-        itertools,
         load_dotenv,
         multipletests,
         np,
         os,
         pathlib,
         pd,
-        performance_metrics,
         plt,
+        submit_pair_entries,
         yf,
     )
 
@@ -233,7 +231,7 @@ def _(section_header):
 def _(REST, TimeFrame, load_dotenv, mo, os, pd, sector_result):
     # API credentials for Alpaca — loaded from .env (see .env.example).
     # No hardcoded fallback: secrets must never live in source that git can see.
-    load_dotenv(mo.notebook_dir() / ".env")
+    load_dotenv(mo.notebook_dir().parents[1] / ".env")
     api_key = os.getenv('ALPACA_API_KEY')
     api_secret = os.getenv('ALPACA_API_SECRET')
     if not api_key or not api_secret:
@@ -604,7 +602,7 @@ def _(OLS, add_constant, adfuller, adj_close_train, mo, np, pd, raw_pairs):
 @app.cell
 def _(duckdb):
     # Cell 1 — load existing pairs from DB
-    with duckdb.connect('quant_trading.db') as _con:
+    with duckdb.connect('data/quant_trading.db') as _con:
         _items_df = _con.execute('SELECT * FROM Assets').df()
 
     existing_pairs = set(zip(_items_df['Asset1'], _items_df['Asset2'])) if not _items_df.empty else set()
@@ -666,10 +664,10 @@ def _(chosen, confirm_btn, mo):
     # Cell 4 — save to file
     mo.stop(not confirm_btn.value, mo.md("Press **Confirm** to save the selected pair."))
 
-    with open('pair.txt', 'w') as f:
+    with open('data/pair.txt', 'w') as f:
         print(chosen[0], chosen[1], file=f)
 
-    mo.callout(mo.md(f"✅ Saved **{chosen[0]} / {chosen[1]}** to `pair.txt`"), kind="success")
+    mo.callout(mo.md(f"✅ Saved **{chosen[0]} / {chosen[1]}** to `data/pair.txt`"), kind="success")
     return
 
 
@@ -934,16 +932,6 @@ def _(RatioMeasure, mo, np, pd, pred_herc, pred_hrp):
     herc_mean = pred_herc.measures_mean(measure=RatioMeasure.CVAR_RATIO)
     herc_std  = pred_herc.measures_std(measure=RatioMeasure.CVAR_RATIO)
 
-    # What the measure-distribution chart draws, in numbers, for the hub
-    # assistant's run record: the CVaR ratio across the CPCV test paths.
-    cpcv_stats = {
-        "paths": len(pred_hrp),
-        "hrp_cvar_ratio": float(hrp_mean), "hrp_cvar_ratio_sd": float(hrp_std),
-        "herc_cvar_ratio": float(herc_mean), "herc_cvar_ratio_sd": float(herc_std),
-        "winner": overall, "hrp_wins": hrp_wins, "herc_wins": herc_wins,
-        "metrics": [(r["Metric"], r["HRP"], r["HERC"], r["Winner"]) for r in rows],
-    }
-
     mo.vstack([
         mo.md("## Head-to-Head: HRP vs HERC (CPCV)"),
         mo.ui.table(comparison_df),
@@ -961,7 +949,7 @@ def _(RatioMeasure, mo, np, pd, pred_herc, pred_hrp):
             kind="success" if overall == "HRP" else "info",
         ),
     ])
-    return cpcv_stats, overall
+    return (overall,)
 
 
 @app.cell
@@ -983,9 +971,6 @@ def _(RatioMeasure, mo, pred_herc, pred_hrp):
     best_hrp  = pred_hrp.max_measure(RatioMeasure.CVAR_RATIO)
     best_herc = pred_herc.max_measure(RatioMeasure.CVAR_RATIO)
 
-    cpcv_best = {"hrp_best_cvar_ratio": float(best_hrp.cvar_ratio),
-                 "herc_best_cvar_ratio": float(best_herc.cvar_ratio)}
-
     fig_hrp_comp  = best_hrp.plot_composition()
     fig_herc_comp = best_herc.plot_composition()
 
@@ -996,7 +981,7 @@ def _(RatioMeasure, mo, pred_herc, pred_hrp):
             mo.vstack([mo.md("### HERC"), mo.as_html(fig_herc_comp)]),
         ]),
     ])
-    return best_herc, best_hrp, cpcv_best
+    return best_herc, best_hrp
 
 
 @app.cell
@@ -1031,7 +1016,7 @@ def _(best_herc, best_hrp, mo, overall):
         value="HRP (best path)",
         label="Model to save",
     )
-    save_btn = mo.ui.run_button(label="💾 Save selected weights to DuckDB")
+    save_btn = mo.ui.run_button(label="💾 Save weights and run strategy (paper orders)")
 
     mo.vstack([
         mo.md(f"**Recommended: {overall}** based on head-to-head above"),
@@ -1048,7 +1033,7 @@ def _(mo, model_choice, portfolio, save_btn):
 
     portfolio.portfolio_ratio_duckdb(model=model_choice.value)
     mo.callout(
-        mo.md(f"✅ **{model_choice.value if isinstance(model_choice.value, str) else 'Selected'}** weights saved to `quant_trading.db` → `Portfolio` table."),
+        mo.md(f"✅ **{model_choice.value if isinstance(model_choice.value, str) else 'Selected'}** weights saved to `data/quant_trading.db` → `Portfolio` table."),
         kind="success",
     )
     return
@@ -1058,7 +1043,7 @@ def _(mo, model_choice, portfolio, save_btn):
 def _(duckdb, mo, pd, save_btn):
     mo.stop(not save_btn.value)
 
-    with duckdb.connect('quant_trading.db') as _con:
+    with duckdb.connect('data/quant_trading.db') as _con:
         portfolio_df = _con.execute('SELECT * FROM Portfolio').df()
         latest_portfolio = portfolio_df.sort_values('id', ascending=False).iloc[0]
         latest_portfolio_df = pd.DataFrame([latest_portfolio])
@@ -1410,6 +1395,7 @@ def _(TradingClient, api_key, api_secret, mo, save_btn):
 @app.cell
 def _(
     account,
+    entry_filter,
     hedge_ratio_series,
     index,
     latest_portfolio_df,
@@ -1422,14 +1408,11 @@ def _(
     CAPITAL_FRACTION = 0.1   # share of the pair's weighted buying power at risk
 
     def trading_simulation(Asset1, Asset2, window1, window2, stop_loss_pct, Kalman_Filter):
-        """Frictionless backtest — no commission, slippage, or borrow cost.
+        """Kalman entries confirmed by causal, two-leg Prophet forecasts.
 
-        Matches the paper-trading account this notebook submits to, which is not
-        charged fees. The reported P&L is therefore an upper bound on live
-        performance, not an estimate of it: it is the result before any
-        execution friction. For reference, on the MSEX/CLNE run this measured
-        ~106 bps of round-trip friction to break even, against a realistic
-        small-cap drag of roughly 24 bps.
+        Accounting uses actual closes only and reports gross realised P&L.
+        The forecast cost allowance is an entry hurdle, not a deducted fee.
+        Close-price execution is an approximation; no intrabar fills are modeled.
         """
         price_ratio = Asset1 / Asset2
         moving_average1 = price_ratio.rolling(window=window1).mean()
@@ -1467,6 +1450,7 @@ def _(
         # Collect log rows in a list and build the DataFrame once after the loop.
         # Re-concatenating a DataFrame per trade (the old approach) was O(n^2).
         log_rows = []
+        forecast_rows = []
 
         # Sizing budget: one capital pool for the pair.
         bp = float(account.buying_power)
@@ -1501,7 +1485,7 @@ def _(
             kalman_val = sig[_i]
             # NaN over the rolling / Kalman warm-up. No signal means no entry,
             # but an already-open position still has to be risk-checked below.
-            has_signal = not np.isnan(kalman_val)
+            has_signal = np.isfinite(kalman_val)
 
             # A stop-out means the spread kept diverging. Re-arming on the very
             # next bar just re-opens the same losing position — the stop has to
@@ -1526,6 +1510,14 @@ def _(
                 # Too little capital to hold both legs; a one-legged "pair"
                 # trade is just an outright directional bet.
                 if Asset1_shares > 0 and Asset2_shares > 0:
+                    # Synchronous, causal confirmation BEFORE changing position
+                    # state. A veto cannot leave a phantom position/exit behind.
+                    _forecast = entry_filter.evaluate(
+                        date, p1, p2, Asset1_shares, Asset2_shares, kalman_val
+                    )
+                    forecast_rows.append(_forecast)
+                    if not _forecast['allowed']:
+                        continue
                     entry_notional = p1 * Asset1_shares + p2 * Asset2_shares
                     _traded_notional += entry_notional
                     open_trade = 1
@@ -1625,7 +1617,7 @@ def _(
         summary_ui = mo.vstack([
             mo.callout(
                 mo.md(
-                    f"**Gross Profit (out-of-sample)** from "
+                    f"**Kalman + Prophet gross profit (out-of-sample)** from "
                     f"`{Asset1.index[0].strftime('%Y-%m-%d')}` to "
                     f"`{Asset1.index[-1].strftime('%Y-%m-%d')}`: **${profit:,.2f}**  \n"
                     f"*Return on ${pair_capital:,.0f} deployed: "
@@ -1634,8 +1626,9 @@ def _(
                     f"Stop-loss exits: {stop_loss_exits}.*  \n"
                     f"*The pair was selected on the train window only — these "
                     f"bars were never used to choose it.*  \n"
-                    f"*No commission, slippage, or borrow cost is modelled "
-                    f"(paper account). Breakeven friction for this run: "
+                    f"*Prophet is fitted only through each entry decision date. "
+                    f"Costs and the forecast buffer gate entries; reported P&L "
+                    f"remains gross, using actual closes. Breakeven friction: "
                     f"{profit / max(_traded_notional, 1e-9) * 1e4:,.0f} bps "
                     f"round-trip across ${_traded_notional:,.0f} traded.*"
                 ),
@@ -1667,7 +1660,8 @@ def _(
         }).set_index('Date')
 
         return (('High Trades', high_dic), ('Low Trades', low_dic), growth_tracker,
-                ('Total Profit:', profit), trades, trading_log, summary_ui)
+                ('Total Profit:', profit), trades, trading_log, summary_ui,
+                pd.DataFrame(forecast_rows))
 
     return (trading_simulation,)
 
@@ -1706,12 +1700,9 @@ def _(
     )
 
     # ── Spread / Residual via Kalman Filter ───────────────────────────────────────
-    # The backtest and the live signal run on ACTUAL prices only. The Prophet
-    # forecasts in section 04.1 are kept purely as projection plots — they are
-    # deliberately NOT spliced into the traded series, and this cell no longer
-    # waits on them. Computing P&L on forecasted prices is not real performance,
-    # and pre-scheduling trades off a deterministic price extrapolation is
-    # unsound; the strategy instead reacts to the latest observed spread.
+    # Kalman and realised P&L use ACTUAL prices only. The entry loop separately
+    # fits Prophet through each candidate date to confirm the proposed direction.
+    # Forecast prices are never appended to the observed or traded price series.
     def actual_series(stock_data):
         """Actual close prices indexed by date."""
         return stock_data.set_index('ds')['y']
@@ -1793,123 +1784,96 @@ def _(
 def _(mo, save_btn):
     mo.stop(not save_btn.value)
 
-    # Prophet tuning is by far the most expensive thing in this notebook: a
-    # 16-point grid crossed with rolling-origin CV, run for both legs. Its only
-    # consumer is the pair of projection charts below — no forecast reaches the
-    # backtest or the order path — so it is opt-in rather than on by default.
-    prophet_toggle = mo.ui.checkbox(
-        label="Run Prophet projection (slow — grid search over both legs)"
+    forecast_horizon = mo.ui.number(
+        start=1, stop=60, step=1, value=5,
+        label="Prophet forecast horizon (trading sessions)",
     )
-    prophet_toggle
-    return (prophet_toggle,)
+    forecast_cost = mo.ui.number(
+        start=0, stop=1000, step=5, value=20,
+        label="Round-trip cost allowance (bps of total entry notional)",
+    )
+    forecast_buffer = mo.ui.number(
+        start=0, stop=1000, step=5, value=50,
+        label="Forecast error buffer (bps of total entry notional)",
+    )
+    mo.vstack([
+        mo.md("**Prophet entry confirmation is required.** Both price forecasts "
+              "must support the Kalman direction after the cost allowance and buffer. "
+              "Disagreement or an unavailable forecast means hold. Exits and stop losses "
+              "do not require a forecast. The horizon is a lookahead, not a forced exit. "
+              "The cost and buffer defaults are editable assumptions, not calibrated estimates."),
+        forecast_horizon, forecast_cost, forecast_buffer,
+    ])
+    return forecast_buffer, forecast_cost, forecast_horizon
 
 
 @app.cell
 def _(
-    Figure,
-    Prophet,
-    adj_close,
-    cross_validation,
+    ProphetEntryFilter,
     first_stock_data,
-    index,
-    itertools,
-    mo,
-    np,
-    pairs,
-    pd,
-    performance_metrics,
-    plt,
-    prophet_toggle,
+    forecast_buffer,
+    forecast_cost,
+    forecast_horizon,
+    pair_risk,
     second_stock_data,
 ):
-    figs = []
-
-    if prophet_toggle.value:
-        # ── Hyperparameter Tuning ─────────────────────────────────────────────
-        param_grid = {
-            'changepoint_prior_scale': [0.001, 0.01, 0.1, 0.5],
-            'seasonality_prior_scale': [0.01, 0.1, 1.0, 10.0],
-        }
-        all_params = [dict(zip(param_grid.keys(), v)) for v in itertools.product(*param_grid.values())]
-
-        n_total     = len(adj_close)
-        initial_str = f'{int(n_total * 0.70)} days'
-        period_str  = f'{int(n_total * 0.70 / 6)} days'
-        horizon_str = f'{int(n_total * 0.70 / 3)} days'
-
-        def tune_prophet(data):
-            """Return (best_params, tuning_results_df)."""
-            rmses = []
-            for params in all_params:
-                m = Prophet(**params).fit(data)
-                df_cv = cross_validation(
-                    m,
-                    initial=initial_str,
-                    period=period_str,
-                    horizon=horizon_str,
-                    parallel='threads',   # safe on Windows / Marimo
-                )
-                df_p = performance_metrics(df_cv, rolling_window=1)
-                rmses.append(df_p['rmse'].values[0])
-            results = pd.DataFrame(all_params)
-            results['rmse'] = rmses
-            best = all_params[int(np.argmin(rmses))]
-            return best, results
-
-        # ── Model Training ────────────────────────────────────────────────────
-        def train_prophet_model(data, params):
-            model = Prophet(
-                interval_width=0.95,
-                changepoint_prior_scale=params['changepoint_prior_scale'],
-                seasonality_prior_scale=params['seasonality_prior_scale'],
-                holidays_prior_scale=15,
-                weekly_seasonality=True,
-                yearly_seasonality=True,
-                daily_seasonality=False,
-            )
-            model.add_country_holidays(country_name='US')
-            model.fit(data)
-            return model
-
-        def generate_forecast(model, periods=365):
-            future   = model.make_future_dataframe(periods=periods)
-            forecast = model.predict(future)
-            return forecast
-
-        # ── Plotting ──────────────────────────────────────────────────────────
-        def plot_forecast(model, forecast, title=''):
-            fig = Figure(figsize=(10, 4))
-            ax = fig.subplots()
-            model.plot(forecast, ax=ax, include_legend=True)
-            if title:
-                ax.set_title(title)
-            fig.tight_layout()
-            return fig
-
-        with mo.status.spinner(title="Tuning and fitting Prophet models..."):
-            for _data, _title in (
-                (first_stock_data,  pairs[index][1]),
-                (second_stock_data, pairs[index][0]),
-            ):
-                _best, _ = tune_prophet(_data)
-                _model = train_prophet_model(_data, _best)
-                figs.append(plot_forecast(_model, generate_forecast(_model), title=_title))
-    return (figs,)
+    # An explicit graph edge ensures actual-position exits are checked before
+    # any historical Prophet fitting starts. A blocked entry still permits study.
+    assert pair_risk['checked']
+    entry_filter = ProphetEntryFilter(
+        first_stock_data.set_index('ds')['y'],
+        second_stock_data.set_index('ds')['y'],
+        horizon=int(forecast_horizon.value),
+        cost_bps=float(forecast_cost.value),
+        buffer_bps=float(forecast_buffer.value),
+    )
+    return (entry_filter,)
 
 
 @app.cell
 def _(section_header):
-    section_header("Prediction Graphs", "04.1") # subsection
+    section_header("Prophet Trade Forecasts", "04.1")
     return
 
 
 @app.cell
-def _(figs, mo):
-    # ── Return to Marimo ──────────────────────────────────────────────────────────
-    mo.vstack([mo.mpl.interactive(fig) for fig in figs]) if figs else mo.callout(
-        mo.md("Prophet projection is off — tick the box above to generate it."),
-        kind="info",
-    )
+def _(Figure, entry_filter, index, mo, pairs, pd, result, simulation):
+    _decisions = simulation[7]
+    _panels = [mo.md(
+        f"**A = {pairs[index][1]} · B = {pairs[index][0]}**. "
+        "Each row shows the forecasts used for one candidate entry, its hedge-sized "
+        "projected profit in both directions, and the decision. No forecasts are "
+        "needed while a position is open or Kalman has no entry signal."
+    )]
+    if _decisions.empty:
+        _panels.append(mo.callout(mo.md("No candidate entries to forecast."), kind="info"))
+    else:
+        _last = _decisions.iloc[-1]
+        _date = pd.Timestamp(_last['Date']).normalize()
+        _latest_bar = pd.Timestamp(result.index[-1]).normalize()
+        _panels.append(mo.md(
+            f"**Last evaluated entry: {_date.date()}** — {_last['reason']}. "
+            + ("" if _date == _latest_bar else
+               f"This is a historical decision, not a forecast for the latest bar ({_latest_bar.date()}).")
+        ))
+        _complete = entry_filter.forecasts.get(_date)
+        if _complete is not None:
+            for _history, _projection, _symbol in zip(
+                _complete['histories'], _complete['projections'],
+                (pairs[index][1], pairs[index][0]),
+            ):
+                _figure = Figure(figsize=(10, 4))
+                _axis = _figure.subplots()
+                _recent = _history.tail(60)
+                _axis.plot(_recent['ds'], _recent['y'], label='Observed price')
+                _axis.plot(_projection['ds'], _projection['yhat'], 'o--', label='Prophet forecast')
+                _axis.axvline(_date, color='grey', linestyle=':')
+                _axis.set_title(f'{_symbol}: forecast made {_date.date()}')
+                _axis.legend()
+                _figure.tight_layout()
+                _panels.append(mo.mpl.interactive(_figure))
+        _panels.append(mo.ui.table(_decisions))
+    mo.vstack(_panels)
     return
 
 
@@ -1970,6 +1934,33 @@ def _(mo, save_btn):
 
 @app.cell
 def _(
+    check_pair_exits,
+    index,
+    mo,
+    pairs,
+    result,
+    result1,
+    save_btn,
+    series,
+    stop_loss_input,
+    trading_client,
+):
+    mo.stop(not save_btn.value)
+    pair_risk = check_pair_exits(
+        trading_client, (pairs[index][1], pairs[index][0]),
+        (float(result.iloc[-1]), float(result1.iloc[-1])),
+        float(series.reindex(result.index).iloc[-1]),
+        float(stop_loss_input.value), result.index[-1].date(),
+    )
+    mo.vstack([
+        mo.md('**Current-position exit check** — ' + pair_risk['message']),
+        mo.ui.table(pair_risk['rows']) if pair_risk['rows'] else mo.md(''),
+    ])
+    return (pair_risk,)
+
+
+@app.cell
+def _(
     Kalman_Filter,
     mo,
     result,
@@ -1982,9 +1973,10 @@ def _(
 
     # Single source of truth — every display and the order path below read from
     # this one run instead of re-simulating with their own parameters.
-    simulation = trading_simulation(
-        result, result1, 10, 60, stop_loss_input.value, Kalman_Filter
-    )
+    with mo.status.spinner(title="Backtesting Kalman entries with Prophet confirmation..."):
+        simulation = trading_simulation(
+            result, result1, 10, 60, stop_loss_input.value, Kalman_Filter
+        )
     return (simulation,)
 
 
@@ -2018,7 +2010,7 @@ def _(duckdb, index, market_cap_input, mo, pairs, save_btn, sector_input):
     mo.stop(not save_btn.value)
 
     item = {'sector': sector_input, 'Size': market_cap_input, 'Asset1': pairs[index][0], 'Asset2': pairs[index][1]}
-    with duckdb.connect('quant_trading.db') as _con:
+    with duckdb.connect('data/quant_trading.db') as _con:
         query = '\n        SELECT * FROM Assets\n        WHERE sector = ? AND Size = ? AND Asset1 = ? AND Asset2 = ?\n    '
         result_1 = _con.execute(query, (item['sector'], item['Size'], item['Asset1'], item['Asset2'])).fetchall()
         if result_1:
@@ -2036,134 +2028,46 @@ def _(duckdb, index, market_cap_input, mo, pairs, save_btn, sector_input):
 
 @app.cell
 def _(
-    MarketOrderRequest,
-    OrderSide,
-    TimeInForce,
+    index,
     mo,
+    pair_risk,
+    pairs,
     pd,
     result,
     save_btn,
+    submit_pair_entries,
     trade_log,
     trading_client,
 ):
     mo.stop(not save_btn.value)
 
-
-    status_items = []
-    order_items  = []
-    # Outcome per leg, handed to the hub assistant's run record after this cell.
-    pair_exec = {"signal_date": None, "hold": False, "rows": []}
-
-    trade_log['Date'] = pd.to_datetime(trade_log['Date'])
-    # Reactive execution: act only if the most recent ACTUAL bar fired an
-    # entry/exit signal. No forecast prices are involved, so trades follow the
-    # spread we actually observed rather than a stale forward schedule.
+    # Broker-position exits have already been checked, before Prophet fitting.
+    # The replay supplies NEW entries only; simulated closes cannot open an
+    # inverse position in an account that never executed the historical entry.
     signal_date = pd.Timestamp(result.index[-1]).date()
-    today_row = trade_log[trade_log['Date'].dt.date == signal_date]
-    pair_exec["signal_date"] = str(signal_date)
-
-    if today_row.empty:
-        pair_exec["hold"] = True
-        status_items.append(mo.callout(mo.md(f"⏸ **Hold** — no signal on the latest bar (`{signal_date}`)."), kind="info"))
+    _dates = pd.to_datetime(trade_log['Date'])
+    _entries = trade_log[
+        (_dates.dt.date == signal_date) & trade_log['Trade_Type'].isin(['High', 'Low'])
+    ]
+    if pair_risk['entry_allowed']:
+        pair_exec = submit_pair_entries(
+            trading_client, (pairs[index][1], pairs[index][0]),
+            _entries.to_dict('records'), signal_date,
+        )
     else:
-        for _ticker, _action, _qty in zip(today_row['Asset'], today_row['Action'], today_row['Quantity']):
-            _leg = {"symbol": _ticker, "action": _action, "qty": _qty, "outcome": "unknown"}
-            pair_exec["rows"].append(_leg)
-            # Look the symbol up directly. This used to GET /v2/assets and pull
-            # down the entire tradable universe to linear-scan it for two names.
-            try:
-                asset = trading_client.get_asset(_ticker)
-            except Exception as e:
-                _leg["outcome"] = "skipped: lookup failed"
-                order_items.append(mo.callout(mo.md(f"⚠️ Ticker `{_ticker}` lookup failed: {e}"), kind="warn"))
-                continue
-
-            asset_info = f"**{asset.symbol}** — {asset.exchange} — Tradable: `{asset.tradable}`"
-
-            if not asset.tradable:
-                _leg["outcome"] = "skipped: not tradable"
-                order_items.append(mo.callout(mo.md(f"🚫 {asset_info}\nNot tradable, skipping."), kind="warn"))
-                continue
-
-            if _action == 'Sell' and not asset.shortable:
-                _leg["outcome"] = "skipped: not shortable"
-                order_items.append(mo.callout(mo.md(f"🚫 {asset_info}\nCannot be sold short, skipping."), kind="warn"))
-                continue
-
-            # Whole shares: GTC market orders reject fractional quantities, and
-            # the backtest already sized in whole shares.
-            _qty = int(_qty)
-            _leg["qty"] = _qty
-            if _qty <= 0:
-                _leg["outcome"] = "skipped: zero quantity"
-                order_items.append(mo.callout(mo.md(f"⚠️ {asset_info}\nQuantity rounds to 0, skipping."), kind="warn"))
-                continue
-
-            order_data = MarketOrderRequest(
-                symbol=_ticker,
-                qty=_qty,
-                side=OrderSide.BUY if _action == 'Buy' else OrderSide.SELL,
-                time_in_force=TimeInForce.GTC
-            )
-            try:
-                order = trading_client.submit_order(order_data=order_data)
-                _leg["outcome"] = "submitted"
-                _leg["order_ref"] = str(order.id)
-                order_items.append(mo.callout(
-                    mo.md(f"✅ {asset_info}\n`{_action}` {_qty} shares — Order ID: `{order.id}`"),
-                    kind="success"
-                ))
-            except Exception as e:
-                _leg["outcome"] = "failed"
-                order_items.append(mo.callout(
-                    mo.md(f"❌ {asset_info}\nOrder failed: {e}"),
-                    kind="danger"
-                ))
-
-    # Current positions
-    portfolio_trading = trading_client.get_all_positions()
-    positions_df = pd.DataFrame([
-        {"Symbol": p.symbol, "Quantity": p.qty}
-        for p in portfolio_trading
+        pair_exec = dict(pair_risk)
+    _positions = trading_client.get_all_positions()
+    _positions_df = pd.DataFrame([
+        {'Symbol': p.symbol, 'Quantity': p.qty} for p in _positions
     ])
-
     mo.vstack([
-        mo.md("## Trade Execution"),
-        *status_items,
-        mo.md("### Order Results") if order_items else mo.md(""),
-        *order_items,
-        mo.md("### Current Positions"),
-        mo.ui.table(positions_df) if not positions_df.empty
-        else mo.callout(mo.md("No open positions."), kind="info"),
+        mo.md('## Trade Execution'),
+        mo.md(pair_exec['message']),
+        mo.ui.table(pair_exec['rows']) if pair_exec['rows'] else mo.md(''),
+        mo.md('### Current Positions'),
+        mo.ui.table(_positions_df) if not _positions_df.empty else mo.md('No open positions.'),
     ])
     return (pair_exec,)
-
-
-@app.cell
-def _(chosen, cpcv_best, cpcv_stats, pair_diagnostics, pairs, simulation):
-    # Hub assistant run record, written as soon as the analysis exists: the
-    # screening diagnostics, the backtest, and the CPCV allocation study the
-    # measure-distribution chart draws. The order cell below updates this same
-    # run. Never raises; see agent_diag/record.py.
-    import agent_diag.record as _agent_record
-
-    _agent_record.record_pair_trading(
-        chosen, pair_diagnostics, simulation, None, pairs_available=len(pairs),
-        portfolio={**cpcv_stats, **cpcv_best},
-    )
-    return
-
-
-@app.cell
-def _(chosen, pair_diagnostics, pair_exec, pairs, save_btn, simulation):
-    # The same run, now carrying what happened to each leg.
-    import agent_diag.record as _agent_record
-
-    if save_btn.value:
-        _agent_record.record_pair_trading(
-            chosen, pair_diagnostics, simulation, pair_exec, pairs_available=len(pairs)
-        )
-    return
 
 
 @app.cell
