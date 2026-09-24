@@ -110,6 +110,20 @@ def _(Path, mo, wl):
 
 
 @app.cell
+def _(ARMED, SYMBOLS, finra_token):
+    # Hub assistant run record: the watchlist and whether the FINRA feed is
+    # live. Each section below adds its own figures to the same day's record;
+    # this cell runs even when every section stops on empty data.
+    import agent_diag.record as _agent_record
+
+    _agent_record.record_otc(
+        "auth", {}, symbols=SYMBOLS, sources=[s.label for s in ARMED],
+        finra_live=finra_token is not None,
+    )
+    return
+
+
+@app.cell
 def _(ARMED, SYMBOLS, finra_token, mo):
     _pair = " · ".join(SYMBOLS)
     _src = " + ".join(f"{s.label} ({len(s.symbols)})" for s in ARMED)
@@ -195,7 +209,9 @@ def _(finra_token, mo, pd, requests):
 
 
 @app.cell
-def _(SYMBOLS, date, finra_query, mo, page_header, timedelta):
+def _(ARMED, SYMBOLS, date, finra_query, mo, page_header, timedelta):
+    import agent_diag.record as _agent_record  # hub assistant run record
+
     _today = date.today()
     _raw = finra_query(
         "otcMarket",
@@ -231,12 +247,22 @@ def _(SYMBOLS, date, finra_query, mo, page_header, timedelta):
         .rename(columns={"securitiesInformationProcessorSymbolIdentifier": "symbol"})
     )
 
+    # Per-symbol latest figures, handed to the hub assistant's run record below.
+    _record_rows = []
+
     _cards = []
     for _sym in SYMBOLS:
         _d = _tape[_tape.symbol == _sym].sort_values("tradeReportDate")
         if _d.empty:
             continue
         _latest_day = _d.tradeReportDate.max()
+        _last = _d[_d.tradeReportDate == _latest_day].iloc[-1]
+        _record_rows.append({
+            "symbol": _sym,
+            "short_ratio": round(float(_last.ratio), 4),
+            "short_shares": float(_last.shortParQuantity),
+            "total_shares": float(_last.totalParQuantity),
+        })
         _rows, _prev = [], None
         for _r in _d.itertuples():
             if _prev is None:
@@ -276,7 +302,7 @@ def _(SYMBOLS, date, finra_query, mo, page_header, timedelta):
         {"".join(_rows)}
       </div>""")
 
-    mo.vstack(
+    _view = mo.vstack(
         [
             page_header(
                 "Short-Volume Tape",
@@ -292,11 +318,21 @@ def _(SYMBOLS, date, finra_query, mo, page_header, timedelta):
             ),
         ]
     )
+
+    _agent_record.record_otc(
+        "reg_sho",
+        {"latest_date": str(_tape.tradeReportDate.max()), "rows": int(len(_raw)),
+         "symbols": _record_rows},
+        symbols=SYMBOLS, sources=[s.label for s in ARMED], finra_live=True,
+    )
+    _view
     return
 
 
 @app.cell
-def _(FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
+def _(ARMED, FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
+    import agent_diag.record as _agent_record  # hub assistant run record
+
     _today = date.today()
     _ats = finra_query(
         "otcMarket",
@@ -326,6 +362,9 @@ def _(FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
     )
     mo.stop(_ats.empty, mo.md("No ATS rows in the window."))
 
+    # Per-symbol weekly totals, handed to the hub assistant's run record below.
+    _record_rows = []
+
     _cards = []
     for _sym in FOCUS:
         _d = _ats[_ats.issueSymbolIdentifier == _sym]
@@ -340,6 +379,12 @@ def _(FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
         _total_sh = _wk.totalWeeklyShareQuantity.sum()
         _total_ntl = _wk.totalNotionalSum.fillna(0).sum()
         _max_sh = _wk.totalWeeklyShareQuantity.max()
+        _top = _wk.iloc[0]
+        _record_rows.append({
+            "symbol": _sym, "week": str(_week),
+            "total_shares": float(_total_sh), "total_notional": float(_total_ntl),
+            "top_venue": str(_top.MPID), "top_venue_shares": float(_top.totalWeeklyShareQuantity),
+        })
 
         _bars = []
         for _r in _wk.head(5).itertuples():
@@ -373,7 +418,7 @@ def _(FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
         {_foot}
       </div>""")
 
-    mo.vstack(
+    _view = mo.vstack(
         [
             page_header(
                 "Dark-Pool Venues",
@@ -385,11 +430,21 @@ def _(FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
             ),
         ]
     )
+
+    _agent_record.record_otc(
+        "ats",
+        {"latest_week": str(_ats.weekStartDate.max()), "rows": int(len(_ats)),
+         "symbols": _record_rows},
+        symbols=FOCUS, sources=[s.label for s in ARMED], finra_live=True,
+    )
+    _view
     return
 
 
 @app.cell
-def _(SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
+def _(ARMED, SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
+    import agent_diag.record as _agent_record  # hub assistant run record
+
     _si = finra_query(
         "otcMarket",
         "consolidatedShortInterest",
@@ -411,6 +466,15 @@ def _(SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
     _latest = _si[_si.settlementDate == _settle].sort_values(
         "currentShortPositionQuantity", ascending=False
     )
+
+    # Per-symbol settlement figures, handed to the hub assistant's run record below.
+    _record_rows = [{
+        "symbol": str(_row.symbolCode),
+        "short_position": float(_row.currentShortPositionQuantity),
+        "change_pct": float(_row.changePercent),
+        "days_to_cover": float(_row.daysToCoverQuantity),
+        "avg_daily_volume": float(_row.averageDailyVolumeQuantity),
+    } for _row in _latest.itertuples()]
 
     _cards = []
     for _r in _latest.itertuples():
@@ -434,7 +498,7 @@ def _(SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
         </div>
       </div>""")
 
-    mo.vstack(
+    _view = mo.vstack(
         [
             page_header(
                 "Short Interest",
@@ -447,6 +511,13 @@ def _(SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
             ),
         ]
     )
+
+    _agent_record.record_otc(
+        "short_interest",
+        {"settlement_date": str(_settle), "rows": int(len(_si)), "symbols": _record_rows},
+        symbols=SYMBOLS, sources=[s.label for s in ARMED], finra_live=True,
+    )
+    _view
     return
 
 
