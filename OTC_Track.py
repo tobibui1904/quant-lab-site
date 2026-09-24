@@ -3,8 +3,8 @@ import marimo
 __generated_with = "0.23.14"
 app = marimo.App(
     width="medium",
-    css_file="theme.css",
-    html_head_file="theme_head.html",
+    css_file="../../theme.css",
+    html_head_file="../../theme_head.html",
 )
 
 
@@ -21,17 +21,18 @@ def _():
 
     import marimo as mo
 
-    _nb_dir = Path(__file__).resolve().parent
+    # desks/otc/ -> the Quant root, where .env and otc_watchlist.py live.
+    _root = Path(__file__).resolve().parents[2]
 
-    # Load .env from the notebook's own directory, not the cwd marimo happens to
-    # be launched from. Real environment variables still win over the file.
-    _ = load_dotenv(_nb_dir / ".env")
+    # Load .env from the Quant root, not the cwd marimo happens to be
+    # launched from. Real environment variables still win over the file.
+    _ = load_dotenv(_root / ".env")
 
     # Same reasoning for the watchlist module: the hub launches this notebook
-    # from its own working directory, so put the notebook's directory on the
-    # path rather than relying on cwd.
-    if str(_nb_dir) not in sys.path:
-        sys.path.insert(0, str(_nb_dir))
+    # from its own working directory, so put the Quant root on the path
+    # rather than relying on cwd.
+    if str(_root) not in sys.path:
+        sys.path.insert(0, str(_root))
 
     import otc_watchlist as wl
 
@@ -84,7 +85,7 @@ def _(Path, mo, wl):
     # (LETF Backtest), whichever of the two has actually run. A symbol file on
     # its own proves nothing — both writers leave one behind indefinitely — so
     # each source counts only while its ready flag stands. See otc_watchlist.py.
-    _root = Path(__file__).resolve().parent
+    _root = Path(__file__).resolve().parents[2]
     SYMBOLS, ARMED = wl.resolve_watchlist(_root)
 
     mo.stop(
@@ -107,20 +108,6 @@ def _(Path, mo, wl):
 
     FOCUS = SYMBOLS  # dark-pool venue breakdown covers the whole watchlist
     return ARMED, FOCUS, SYMBOLS
-
-
-@app.cell
-def _(ARMED, SYMBOLS, finra_token):
-    # Hub assistant run record: the watchlist and whether the FINRA feed is
-    # live. Each section below adds its own figures to the same day's record;
-    # this cell runs even when every section stops on empty data.
-    import agent_diag.record as _agent_record
-
-    _agent_record.record_otc(
-        "auth", {}, symbols=SYMBOLS, sources=[s.label for s in ARMED],
-        finra_live=finra_token is not None,
-    )
-    return
 
 
 @app.cell
@@ -210,8 +197,6 @@ def _(finra_token, mo, pd, requests):
 
 @app.cell
 def _(ARMED, SYMBOLS, date, finra_query, mo, page_header, timedelta):
-    import agent_diag.record as _agent_record  # hub assistant run record
-
     _today = date.today()
     _raw = finra_query(
         "otcMarket",
@@ -247,9 +232,6 @@ def _(ARMED, SYMBOLS, date, finra_query, mo, page_header, timedelta):
         .rename(columns={"securitiesInformationProcessorSymbolIdentifier": "symbol"})
     )
 
-    # Per-symbol latest figures, handed to the hub assistant's run record below.
-    _record_rows = []
-
     _cards = []
     for _sym in SYMBOLS:
         _d = _tape[_tape.symbol == _sym].sort_values("tradeReportDate")
@@ -257,12 +239,6 @@ def _(ARMED, SYMBOLS, date, finra_query, mo, page_header, timedelta):
             continue
         _latest_day = _d.tradeReportDate.max()
         _last = _d[_d.tradeReportDate == _latest_day].iloc[-1]
-        _record_rows.append({
-            "symbol": _sym,
-            "short_ratio": round(float(_last.ratio), 4),
-            "short_shares": float(_last.shortParQuantity),
-            "total_shares": float(_last.totalParQuantity),
-        })
         _rows, _prev = [], None
         for _r in _d.itertuples():
             if _prev is None:
@@ -319,20 +295,12 @@ def _(ARMED, SYMBOLS, date, finra_query, mo, page_header, timedelta):
         ]
     )
 
-    _agent_record.record_otc(
-        "reg_sho",
-        {"latest_date": str(_tape.tradeReportDate.max()), "rows": int(len(_raw)),
-         "symbols": _record_rows},
-        symbols=SYMBOLS, sources=[s.label for s in ARMED], finra_live=True,
-    )
     _view
     return
 
 
 @app.cell
 def _(ARMED, FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
-    import agent_diag.record as _agent_record  # hub assistant run record
-
     _today = date.today()
     _ats = finra_query(
         "otcMarket",
@@ -362,9 +330,6 @@ def _(ARMED, FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
     )
     mo.stop(_ats.empty, mo.md("No ATS rows in the window."))
 
-    # Per-symbol weekly totals, handed to the hub assistant's run record below.
-    _record_rows = []
-
     _cards = []
     for _sym in FOCUS:
         _d = _ats[_ats.issueSymbolIdentifier == _sym]
@@ -380,12 +345,6 @@ def _(ARMED, FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
         _total_ntl = _wk.totalNotionalSum.fillna(0).sum()
         _max_sh = _wk.totalWeeklyShareQuantity.max()
         _top = _wk.iloc[0]
-        _record_rows.append({
-            "symbol": _sym, "week": str(_week),
-            "total_shares": float(_total_sh), "total_notional": float(_total_ntl),
-            "top_venue": str(_top.MPID), "top_venue_shares": float(_top.totalWeeklyShareQuantity),
-        })
-
         _bars = []
         for _r in _wk.head(5).itertuples():
             _name = (_r.marketParticipantName or "").removeprefix(_r.MPID or "").strip()
@@ -431,20 +390,12 @@ def _(ARMED, FOCUS, date, finra_query, fmt_qty, mo, page_header, timedelta):
         ]
     )
 
-    _agent_record.record_otc(
-        "ats",
-        {"latest_week": str(_ats.weekStartDate.max()), "rows": int(len(_ats)),
-         "symbols": _record_rows},
-        symbols=FOCUS, sources=[s.label for s in ARMED], finra_live=True,
-    )
     _view
     return
 
 
 @app.cell
 def _(ARMED, SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
-    import agent_diag.record as _agent_record  # hub assistant run record
-
     _si = finra_query(
         "otcMarket",
         "consolidatedShortInterest",
@@ -466,15 +417,6 @@ def _(ARMED, SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
     _latest = _si[_si.settlementDate == _settle].sort_values(
         "currentShortPositionQuantity", ascending=False
     )
-
-    # Per-symbol settlement figures, handed to the hub assistant's run record below.
-    _record_rows = [{
-        "symbol": str(_row.symbolCode),
-        "short_position": float(_row.currentShortPositionQuantity),
-        "change_pct": float(_row.changePercent),
-        "days_to_cover": float(_row.daysToCoverQuantity),
-        "avg_daily_volume": float(_row.averageDailyVolumeQuantity),
-    } for _row in _latest.itertuples()]
 
     _cards = []
     for _r in _latest.itertuples():
@@ -512,11 +454,6 @@ def _(ARMED, SYMBOLS, date, finra_query, fmt_qty, mo, page_header, timedelta):
         ]
     )
 
-    _agent_record.record_otc(
-        "short_interest",
-        {"settlement_date": str(_settle), "rows": int(len(_si)), "symbols": _record_rows},
-        symbols=SYMBOLS, sources=[s.label for s in ARMED], finra_live=True,
-    )
     _view
     return
 
