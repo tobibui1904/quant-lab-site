@@ -934,6 +934,16 @@ def _(RatioMeasure, mo, np, pd, pred_herc, pred_hrp):
     herc_mean = pred_herc.measures_mean(measure=RatioMeasure.CVAR_RATIO)
     herc_std  = pred_herc.measures_std(measure=RatioMeasure.CVAR_RATIO)
 
+    # What the measure-distribution chart draws, in numbers, for the hub
+    # assistant's run record: the CVaR ratio across the CPCV test paths.
+    cpcv_stats = {
+        "paths": len(pred_hrp),
+        "hrp_cvar_ratio": float(hrp_mean), "hrp_cvar_ratio_sd": float(hrp_std),
+        "herc_cvar_ratio": float(herc_mean), "herc_cvar_ratio_sd": float(herc_std),
+        "winner": overall, "hrp_wins": hrp_wins, "herc_wins": herc_wins,
+        "metrics": [(r["Metric"], r["HRP"], r["HERC"], r["Winner"]) for r in rows],
+    }
+
     mo.vstack([
         mo.md("## Head-to-Head: HRP vs HERC (CPCV)"),
         mo.ui.table(comparison_df),
@@ -951,7 +961,7 @@ def _(RatioMeasure, mo, np, pd, pred_herc, pred_hrp):
             kind="success" if overall == "HRP" else "info",
         ),
     ])
-    return (overall,)
+    return cpcv_stats, overall
 
 
 @app.cell
@@ -973,6 +983,9 @@ def _(RatioMeasure, mo, pred_herc, pred_hrp):
     best_hrp  = pred_hrp.max_measure(RatioMeasure.CVAR_RATIO)
     best_herc = pred_herc.max_measure(RatioMeasure.CVAR_RATIO)
 
+    cpcv_best = {"hrp_best_cvar_ratio": float(best_hrp.cvar_ratio),
+                 "herc_best_cvar_ratio": float(best_herc.cvar_ratio)}
+
     fig_hrp_comp  = best_hrp.plot_composition()
     fig_herc_comp = best_herc.plot_composition()
 
@@ -983,7 +996,7 @@ def _(RatioMeasure, mo, pred_herc, pred_hrp):
             mo.vstack([mo.md("### HERC"), mo.as_html(fig_herc_comp)]),
         ]),
     ])
-    return best_herc, best_hrp
+    return best_herc, best_hrp, cpcv_best
 
 
 @app.cell
@@ -2127,10 +2140,23 @@ def _(
 
 
 @app.cell
+def _(chosen, cpcv_best, cpcv_stats, pair_diagnostics, pairs, simulation):
+    # Hub assistant run record, written as soon as the analysis exists: the
+    # screening diagnostics, the backtest, and the CPCV allocation study the
+    # measure-distribution chart draws. The order cell below updates this same
+    # run. Never raises; see agent_diag/record.py.
+    import agent_diag.record as _agent_record
+
+    _agent_record.record_pair_trading(
+        chosen, pair_diagnostics, simulation, None, pairs_available=len(pairs),
+        portfolio={**cpcv_stats, **cpcv_best},
+    )
+    return
+
+
+@app.cell
 def _(chosen, pair_diagnostics, pair_exec, pairs, save_btn, simulation):
-    # Hub assistant run record: screening diagnostics, the backtest, the latest
-    # signal, and what happened to each leg. Runs after the orders above and
-    # never raises; see agent_diag/record.py.
+    # The same run, now carrying what happened to each leg.
     import agent_diag.record as _agent_record
 
     if save_btn.value:
