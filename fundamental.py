@@ -1,12 +1,12 @@
 import marimo
 
 __generated_with = "0.23.9"
-app = marimo.App(css_file="theme.css", html_head_file="theme_head.html")
+app = marimo.App(css_file="../../theme.css", html_head_file="../../theme_head.html")
 
 
 @app.cell
 def _():
-    with open('pair.txt', 'r') as f:
+    with open('data/pair.txt', 'r') as f:
         content = f.read()
         lines = content.splitlines()
         pair = lines[0].split(" ")
@@ -1580,13 +1580,13 @@ def _(
     # ─────────────────────────────────────────────────────────────────────────────
 
     if __name__ == "__main__":
-        result1 = run_analysis(stock1_results, ticker = pair[0], save_json=True, filename="report_stock1.json")
+        result1 = run_analysis(stock1_results, ticker = pair[0], save_json=True, filename="data/report_stock1.json")
     return result1, run_analysis
 
 
 @app.cell
 def _(pair, run_analysis, stock2_results):
-    result2 = run_analysis(stock2_results, ticker = pair[1], save_json=True, filename="report_stock2.json")
+    result2 = run_analysis(stock2_results, ticker = pair[1], save_json=True, filename="data/report_stock2.json")
     return (result2,)
 
 
@@ -1679,11 +1679,6 @@ def _(mo, pair, pd, result1, result2):
 def _(mo, tabs):
     import pathlib
     pathlib.Path(".fundamental_done").touch()
-
-    # Hub assistant run record: both reports are on disk and the flag is set.
-    # Never raises; see agent_diag/record.py.
-    import agent_diag.record as _agent_record
-    _agent_record.record_fundamental()
 
     mo.vstack([
         tabs,
