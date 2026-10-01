@@ -3,8 +3,8 @@ import marimo
 __generated_with = "0.23.14"
 app = marimo.App(
     width="medium",
-    css_file="theme.css",
-    html_head_file="theme_head.html",
+    css_file="../../theme.css",
+    html_head_file="../../theme_head.html",
 )
 
 
@@ -18,6 +18,12 @@ def _():
     from requests.adapters import HTTPAdapter, Retry
 
     import marimo as mo
+    import sys as _sys
+
+    # market_cache is shared with the Macro desk, so it lives in <root>/shared.
+    _shared = str(pathlib.Path(mo.notebook_dir()).parents[1] / "shared")
+    if _shared not in _sys.path:
+        _sys.path.insert(0, _shared)
 
     import bondfile
 
@@ -49,7 +55,9 @@ def _(HTTPAdapter, Retry, pathlib, requests):
              "/fund-data/etfs/us/holdings-daily-us-en")
 
     TICKERS = ("spbo", "spib", "spsb")
-    _CACHE = pathlib.Path(".ssga-cache")
+    import logging as _logging
+    import market_cache as _market_cache
+    import bondfile as _bondfile
 
     session = requests.Session()
     session.mount("https://", HTTPAdapter(
@@ -65,33 +73,15 @@ def _(HTTPAdapter, Retry, pathlib, requests):
     })
 
     def fetch(tickers):
-        """Raw bytes per ticker, cached to disk by day.
-
-        Returns (files, failed). A file that fails leaves its ticker in
-        `failed` rather than raising: two of three files still make a usable
-        desk, and the render cell says which one is missing.
-        """
-        _CACHE.mkdir(exist_ok=True)
+        """Validated holdings in private R2, with daily in-memory reuse."""
+        _cache = _market_cache.get_cache()
         files, failed = {}, []
-        import datetime as _dt
-        stamp = _dt.date.today().isoformat()
         for t in tickers:
-            cached = _CACHE / f"{t}-{stamp}.xlsx"
-            if cached.exists():
-                files[t] = cached.read_bytes()
-                continue
             try:
-                r = session.get(f"{_BASE}-{t}.xlsx", timeout=(10, 60))
-                r.raise_for_status()
-                if not r.content[:2] == b"PK":
-                    # An OOXML file starts with PK. Anything else is the HTML
-                    # shell an issuer serves when it decides you are a bot.
-                    raise ValueError("not an OOXML file — served HTML?")
-                tmp = cached.with_suffix(".tmp")
-                tmp.write_bytes(r.content)
-                tmp.replace(cached)
-                files[t] = r.content
-            except Exception:
+                files[t] = _cache.holdings(t, session, _bondfile.read_holdings)
+            except Exception as _exc:
+                _logging.getLogger("market_cache").warning(
+                    "SSGA holdings unavailable for %s (%s)", t, type(_exc).__name__)
                 failed.append(t)
         return files, failed
 
