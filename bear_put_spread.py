@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.23.9"
-app = marimo.App(width="medium", css_file="theme.css", html_head_file="theme_head.html")
+app = marimo.App(width="medium", css_file="../../theme.css", html_head_file="../../theme_head.html")
 
 
 @app.cell
@@ -20,11 +20,11 @@ def _():
     from alpaca.data.historical.stock import StockHistoricalDataClient
     from alpaca.trading.client import TradingClient
 
-    # Load .env from the notebook's own directory. Bare load_dotenv() searches
+    # Load .env from the Quant root (two levels up). Bare load_dotenv() searches
     # upward from the *working* directory, so it silently finds nothing when
     # marimo is launched from elsewhere.
     _nb_dir = str(mo.notebook_dir())
-    load_dotenv(mo.notebook_dir() / ".env")
+    load_dotenv(mo.notebook_dir().parents[1] / ".env")
 
     # Same reasoning for the engine import: the hub launches this notebook from
     # its own working directory, so put the notebook's directory on the path
@@ -58,7 +58,7 @@ def _():
 
 @app.cell
 def _(mo):
-    with open(mo.notebook_dir() / "pair.txt", "r") as f:
+    with open(mo.notebook_dir().parents[1] / "data" / "pair.txt", "r") as f:
         pair = f.read().splitlines()[0].split(" ")
     return (pair,)
 
