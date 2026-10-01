@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import marimo
 import otc_watchlist
-from agent_diag.api import make_router as make_agent_router
+import hub_events
 from site_gate import SiteGate
 
 load_dotenv(pathlib.Path(__file__).resolve().parent / ".env")
@@ -142,7 +142,7 @@ NOTEBOOKS = [
 ]
 
 # Reports written by fundamental.py, one per leg of the pair
-REPORT_FILES = ["report_stock1.json", "report_stock2.json"]
+REPORT_FILES = ["data/report_stock1.json", "data/report_stock2.json"]
 
 # option_strategy.name is free-form LLM text, so match on keyword pairs
 # ("Bear Put Debit Spread", "bear put spread", ... all resolve the same).
@@ -185,19 +185,19 @@ def suggested_tabs():
 
 marimo_asgi = (
     marimo.create_asgi_app()
-    .with_app(path="/fundamental",        root="fundamental.py")
-    .with_app(path="/macro_research",        root="macro_research.py")
-    .with_app(path="/otc_track",          root="OTC_Track.py")
-    .with_app(path="/forex",              root="forex.py")
-    .with_app(path="/letf",               root="letf.py")
-    .with_app(path="/crypto_inference",               root="crypto_inference.py")
-    .with_app(path="/pred_market",               root="pred_market.py")
-    .with_app(path="/treasury",       root="treasury.py")
-    .with_app(path="/corporate",      root="corporate.py")
-    .with_app(path="/muni",           root="muni.py")
-    .with_app(path="/known_pair_trading", root="known_pair_trading.py")
-    .with_app(path="/bull_call_spread",   root="bull_call_spread.py")
-    .with_app(path="/bear_put_spread",   root="bear_put_spread.py")
+    .with_app(path="/fundamental",        root="desks/equities/fundamental.py")
+    .with_app(path="/macro_research",        root="desks/macro/macro_research.py")
+    .with_app(path="/otc_track",          root="desks/otc/OTC_Track.py")
+    .with_app(path="/forex",              root="desks/forex/forex.py")
+    .with_app(path="/letf",               root="desks/letf/letf.py")
+    .with_app(path="/crypto_inference",               root="desks/crypto/crypto_inference.py")
+    .with_app(path="/pred_market",               root="desks/prediction_markets/pred_market.py")
+    .with_app(path="/treasury",       root="desks/fixed_income/treasury.py")
+    .with_app(path="/corporate",      root="desks/fixed_income/corporate.py")
+    .with_app(path="/muni",           root="desks/fixed_income/muni.py")
+    .with_app(path="/known_pair_trading", root="desks/equities/known_pair_trading.py")
+    .with_app(path="/bull_call_spread",   root="desks/options/bull_call_spread.py")
+    .with_app(path="/bear_put_spread",   root="desks/options/bear_put_spread.py")
     
 ).build()
 
@@ -1313,8 +1313,6 @@ __NAV__
     pollBlotter();
   });
 </script>
-<!-- Hub output assistant: stays hidden unless AI_ENABLED=1 (agent_diag/ui.js). -->
-<script src="/api/agent/ui.js" defer></script>
 </body>
 </html>
 """
@@ -1578,7 +1576,7 @@ async def serve_hub():
 
 @hub.get("/api/pair-hash")
 async def pair_hash():
-    p = pathlib.Path("pair.txt")
+    p = pathlib.Path("data/pair.txt")
     if not p.exists():
         return {"hash": None}
     return {"hash": hashlib.md5(p.read_bytes()).hexdigest()}
@@ -1684,22 +1682,12 @@ async def alpaca_close(symbol: str):
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
 
-# Hub output assistant (read-only). Off unless AI_ENABLED=1; see agent_diag/api.py.
-# The desk ids and the dashboard's own read-only account routes are passed in so
-# agent_diag never imports this module and sees exactly what the dashboard shows.
-hub.include_router(make_agent_router(
-    desk_ids={"hub"} | {nb["id"] for nb in NOTEBOOKS},
-    account_sources={
-        "oanda": {"account": oanda_account, "positions": oanda_positions},
-        "alpaca": {"account": alpaca_account, "positions": alpaca_positions},
-    },
-))
-
 # Mounted last: Mount("/") matches every path, so the hub's own routes above
 # must be registered first to win. Each notebook keeps its own prefix
 # (/fundamental, /forex, ...), which is what marimo already renders its asset
 # and websocket URLs against.
-hub.mount("/", marimo_asgi)
+# Desk session events (desk + timing only) for Grafana; see hub_events.py.
+hub.mount("/", hub_events.SessionMiddleware(marimo_asgi, hub_events.desk_map(NOTEBOOKS)))
 
 # Public edge. With SITE_PASSWORD unset this is a transparent pass-through,
 # so localhost development is unchanged. See site_gate.py.
@@ -1747,6 +1735,8 @@ def funnel_url(port=None):
     return parse_funnel_url(out, PORT if port is None else port)
 
 if __name__ == "__main__":
+    # Process-wide logging wiring. Here, not at import: tests import main.
+    hub_events.install(NOTEBOOKS)
     pathlib.Path(".fundamental_done").unlink(missing_ok=True)
     # ASCII arrow: the console may be cp1252 when stdout is piped on Windows
     print(f"  Quant Lab -> http://{HOST}:{PORT}")
