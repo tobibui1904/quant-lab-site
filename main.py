@@ -783,6 +783,11 @@ __NAV__
       f.style.pointerEvents = 'none';
     });
 
+    // Reopening Crypto must trigger its one-time data/model refresh.
+    if (id === 'crypto_inference' && frameCache[id]) {
+      frameCache[id].remove();
+      delete frameCache[id];
+    }
     if (frameCache[id]) {
       // Already loaded — just show it, no reload
       const f = frameCache[id];
