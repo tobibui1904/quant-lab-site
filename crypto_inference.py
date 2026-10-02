@@ -49,9 +49,11 @@ def _(mo):
     # Crypto research & paper trading
     MAPPO-LSTM · BTC/USD · ETH/USD · ETH/BTC · Alpaca market data
 
-    Live quotes refresh independently of training. Learning uses completed daily
-    bars; the newest 30 days are reserved for testing and the preceding 60 for
-    validation. Each pair qualifies independently with positive trading returns
+    Opening this desk or clicking Refresh fetches the latest available prices once.
+    Automatic checkpoint updates also run Saturday at 12:10 AM New York time.
+    Training includes the newest completed daily bar. Each daily decision is scored
+    before the model learns that day's outcome; the newest 30 scored days form the
+    test window and the preceding 60 form validation. Each pair qualifies with positive trading returns
     in both windows, at least one simulated trade in each, and no more than 20%
     drawdown. Training and evaluation use your zero-fee assumption.
     """)
@@ -60,9 +62,10 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    status_tick=mo.ui.refresh(options=[2,5,10],default_interval=2,label='Refresh status')
+    # Keep completion updates automatic without exposing a polling control.
+    status_tick=mo.ui.refresh(default_interval=2)
     refresh_button=mo.ui.run_button(label='Refresh prices & learning')
-    mo.hstack([refresh_button,status_tick],justify='start')
+    mo.hstack([refresh_button,status_tick.style({'display':'none'})],justify='start')
     return refresh_button, status_tick
 
 
@@ -78,7 +81,7 @@ def _(refresh_button, service):
 @app.cell
 def _(service, status_tick):
     status_tick.value
-    service.start()
+    service.poll()
     snapshot=service.snapshot()
     return (snapshot,)
 
@@ -99,7 +102,9 @@ def _(mo, pd, snapshot):
             'Quote time (UTC)':_quote['timestamp'],'Freshness':'Fresh' if 0<=_age<=60 else 'Stale',
             'Source':'Alpaca'})
     if _quotes: _parts.append(mo.ui.table(_quotes,selection=None))
-    _parts.append(mo.md(f"Completed daily bars through **{snapshot.get('bar_time','loading')}**. Quotes above are live observations, not training labels."))
+    if snapshot.get('live_error'):
+        _parts.append(mo.callout(snapshot['live_error']+'. Signals fall back to the last completed daily bar and paper execution is disabled.',kind='warn'))
+    _parts.append(mo.md(f"Completed daily data is available through **{snapshot.get('bar_time','loading')}**. Signals recompute the current rolling window using the latest fetched Alpaca quote midpoint on opening, Refresh or Execute. Signal timestamps below come from the provider's quotes; they are separate from the checkpoint's training date. Today's unfinished bar is never a training outcome."))
     mo.vstack(_parts)
     return
 
@@ -123,7 +128,7 @@ def _(mo, snapshot):
         _parts.append(mo.callout('Qualifying pairs can execute with the paper button; other pairs remain HOLD.' if _report['execution_ready'] else
             'No pair currently meets the positive trading-return checks. Recommendations remain HOLD.',
             kind='success' if _report['execution_ready'] else 'warn'))
-        _parts.append(mo.md('These are historical held-out strategy returns, not predicted profits for the next trade. ETH/BTC profit is measured in BTC, excluding changes in BTC/USD. Training assumes zero fees and no fixed slippage surcharge; paper orders use current bid/ask prices.'))
+        _parts.append(mo.md('These are historical out-of-sample results of the updating strategy: each decision was scored before training on its outcome. They are not a backtest of the final weights or a next-trade profit forecast. ETH/BTC profit is measured in BTC. Training assumes zero fees; the paper button fetches current bid/ask prices again.'))
     else:
         _parts.append(mo.md('### Model evaluation\nThe corrected model is preparing its first evaluation. Live prices remain available above.'))
     mo.vstack(_parts)
@@ -132,17 +137,37 @@ def _(mo, snapshot):
 
 @app.cell
 def _(mo, snapshot):
+    _live=snapshot.get('live_evaluation',[])
+    _rows=[]
+    for _result in _live:
+        _valid=_result['status']=='provisional'
+        _rows.append({'Pair':_result['symbol'],'Profit currency':_result['quote_currency'],
+            'Test return through quote':f"{_result['test_return']:.2%}" if _valid else 'Unavailable',
+            'Change since last daily close':f"{_result['since_completed_return']:.2%}" if _valid else 'Unavailable',
+            'Valuation bid':_result.get('bid'), 'Quote time (UTC)':_result.get('quote_time','Unavailable'),
+            'Quote age when fetched':f"{_result['quote_age_at_fetch_seconds']:.0f}s" if _valid else 'Unavailable',
+            'Status':('Provisional' if _result['quote_fresh_at_fetch'] else 'Provisional · older quote') if _valid else _result['reason']})
+    mo.vstack([mo.md('### Live-price evaluation · Provisional'),
+        mo.ui.table(_rows,selection=None) if _rows else mo.md('Available after the current model and opening-price snapshot are ready.'),
+        mo.md('The saved test portfolio is valued at the latest available Alpaca bids fetched on opening or Refresh. Returns extend the daily test from the same starting value; no new trades are simulated. ETH/BTC is valued directly in BTC. Older quotes are labeled with their age when fetched. This is an unrealized snapshot, not a completed-day test or a forecast of the next signal. It does not change training or paper eligibility; execution still requires fresh quotes.')])
+    return
+
+
+@app.cell
+def _(mo, snapshot):
     _rows=[]
     for _signal in snapshot.get('signals',[]):
         _validation=_signal.get('validation_return'); _test=_signal.get('test_return')
-        _rows.append({'Pair':_signal['symbol'],'Model signal':_signal['action'],
+        _rows.append({'Pair':_signal['symbol'],'Signal price time (UTC)':_signal.get('as_of'),
+            'Signal price':_signal.get('reference_price'),'Price basis':_signal.get('price_basis'),
+            'Model signal':_signal['action'],
             'Recommendation':_signal.get('recommendation','HOLD'),
             'Validation return':f'{_validation:.2%}' if _validation is not None else 'Unavailable',
             'Test return':f'{_test:.2%}' if _test is not None else 'Unavailable',
             'Profit currency':_signal.get('quote_currency'),'Reason':_signal.get('reason')})
     mo.vstack([mo.md('### BUY / HOLD / SELL recommendations'),
         mo.ui.table(_rows,selection=None) if _rows else mo.md('Signals appear after model evaluation finishes.'),
-        mo.md('All three pairs use Alpaca market data directly. Signals use actual paper holdings when connected; otherwise they assume a cash-only portfolio. ETH/BTC buys spend available BTC; sells spend available ETH. Eligibility does not override stale quotes, broker minimums or insufficient balances.')])
+        mo.md('All three pairs use direct Alpaca data. The latest fetched bid/ask midpoint updates the current inference window, so signals can change within the day without retraining. Refreshing may still produce the same action. Signals use actual paper holdings when connected; otherwise they assume a cash-only portfolio. ETH/BTC buys spend available BTC; sells spend available ETH. Eligibility does not override stale quotes, broker minimums or insufficient balances.')])
     return
 
 
@@ -165,7 +190,7 @@ def _(mo, service, snapshot):
 @app.cell
 def _(mo):
     execute_button=mo.ui.run_button(label='Execute eligible paper signals')
-    mo.vstack([mo.md('### Paper execution\nEach click executes eligible BUY/SELL recommendations and reports why other pairs were skipped. It rechecks live quotes, balances, broker minimums and pending orders. At most one order per symbol and completed bar; no orders run automatically.'),execute_button])
+    mo.vstack([mo.md('### Paper execution\nEach click executes eligible BUY/SELL recommendations and reports why other pairs were skipped. It refetches the latest trades and recomputes signals first, then rechecks live quotes, balances, broker minimums and pending crypto orders. At most one order per symbol per UTC hour; no orders run automatically.'),execute_button])
     return (execute_button,)
 
 
