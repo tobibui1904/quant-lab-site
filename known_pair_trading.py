@@ -1,7 +1,11 @@
 import marimo
 
-__generated_with = "0.23.9"
-app = marimo.App(width="full", css_file="../../theme.css", html_head_file="../../theme_head.html")
+__generated_with = "0.24.2"
+app = marimo.App(
+    width="full",
+    css_file="../../theme.css",
+    html_head_file="../../theme_head.html",
+)
 
 
 @app.cell
@@ -111,22 +115,19 @@ def _():
     from alpaca_trade_api.rest import REST, TimeFrame
 
     return (
-        MarketOrderRequest,
         Figure,
         OLS,
-        OrderSide,
         Parallel,
         ProphetEntryFilter,
         Query,
         REST,
         RatioMeasure,
         TimeFrame,
-        TimeInForce,
         TradingClient,
         add_constant,
         adfuller,
-        coint,
         check_pair_exits,
+        coint,
         col,
         delayed,
         duckdb,
@@ -326,7 +327,7 @@ def _(REST, TimeFrame, load_dotenv, mo, os, pd, sector_result):
 
     adj_close_data = close_prices.dropna(axis=1)
     mo.ui.dataframe(adj_close_data)
-    return adj_close_data, api_key, api_secret, base_url
+    return adj_close_data, api_key, api_secret
 
 
 @app.cell
@@ -370,7 +371,7 @@ def _(adj_close_data, mo):
         ),
         kind="info",
     )
-    return adj_close_test, adj_close_train, split_date
+    return adj_close_train, split_date
 
 
 @app.cell
@@ -596,26 +597,53 @@ def _(OLS, add_constant, adfuller, adj_close_train, mo, np, pd, raw_pairs):
         mo.ui.table(pair_diagnostics),
     ])
     # pair_diagnostics is handed downstream for the hub assistant's run record.
-    return pair_diagnostics, pairs
+    return (pairs,)
 
 
 @app.cell
-def _(duckdb):
-    # Cell 1 — load existing pairs from DB
+def _(
+    TradingClient,
+    api_key,
+    api_secret,
+    duckdb,
+    market_cap_input,
+    mo,
+    pairs,
+    sector_input,
+):
+    # Cell 1 — reconcile the pair registry with Alpaca, then load it.
+    # Assets keeps only pairs with both legs filled and open: anything closed,
+    # including a pair with one leg closed, is removed; a screened pair whose
+    # legs are both filled (e.g. after-hours GTC orders that filled at the
+    # open) is added.
+    from pair_execution import reconcile_pair_registry as _reconcile
+    from pair_execution import unshortable_symbols as _unshortable
+    _client = TradingClient(api_key, api_secret, paper=True)
     with duckdb.connect('data/quant_trading.db') as _con:
-        _items_df = _con.execute('SELECT * FROM Assets').df()
+        pair_registry = _reconcile(
+            _con, _client, [(sector_input, market_cap_input, _p[0], _p[1]) for _p in pairs])
+    # Either leg may be the short, so both must be shortable today (borrow
+    # status changes daily, so this is checked on every load).
+    unshortable = _unshortable(_client, {_s for _p in pairs for _s in _p[:2]})
 
-    existing_pairs = set(zip(_items_df['Asset1'], _items_df['Asset2'])) if not _items_df.empty else set()
-    return (existing_pairs,)
+    _notes = [f"- {_label}: " + ', '.join(f'{_a}/{_b}' for _a, _b in pair_registry[_key])
+              for _key, _label in [('removed', 'Removed (not a filled pair on Alpaca)'),
+                                   ('added', 'Added (both legs filled)')]
+              if pair_registry[_key]]
+    _hidden = [f'{_p[0]}/{_p[1]}' for _p in pairs if unshortable & {_p[0], _p[1]}]
+    if _hidden:
+        _notes.append(f"- Hidden, a leg is not shortable on Alpaca today "
+                      f"({', '.join(sorted(unshortable))}): {', '.join(_hidden)}")
+    mo.callout(mo.md('\n\n'.join(['**Pair registry synced with Alpaca.**', *_notes])), kind='info')
+    return pair_registry, unshortable
 
 
 @app.cell
-def _(existing_pairs, mo, pairs):
-    # Cell 2
-    available_pairs = [
-        (i, p) for i, p in enumerate(pairs)
-        if (p[0], p[1]) not in existing_pairs
-    ]
+def _(mo, pair_registry, pairs, unshortable):
+    # Cell 2 — only pairs with both legs flat on Alpaca (no position, no open
+    # order), both legs shortable, and not already registered can be selected.
+    from pair_execution import selectable_pairs as _selectable
+    available_pairs = _selectable(pairs, pair_registry, unshortable)
 
     pair_labels = {f"[{i}] {p[0]} / {p[1]}": (i, p) for i, p in available_pairs}
 
@@ -1059,13 +1087,13 @@ def _(page_header):
 
 
 @app.cell
-def _(Figure, adj_close_data, index, mo, pairs, plt, save_btn, split_date):
+def _(Figure, adj_close_data, index, mo, pairs, save_btn, split_date):
     mo.stop(not save_btn.value)
 
 
     figure = Figure(figsize=(12, 8))
     axis = figure.subplots()
-    adj_close_data[pairs[index][1]].plot(ax=axis, color='black')
+    adj_close_data[pairs[index][1]].plot(ax=axis, color='magenta')
     adj_close_data[pairs[index][0]].plot(ax=axis, color='royalblue')
     axis.axvline(split_date, color='crimson', linestyle='--', linewidth=1)
     axis.legend([pairs[index][1], pairs[index][0], 'train | test'], prop={'size': 15})
@@ -1086,7 +1114,6 @@ def _(
     mo,
     pairs,
     pd,
-    plt,
     save_btn,
     split_date,
 ):
@@ -1112,7 +1139,7 @@ def _(
 
     figure1 = Figure(figsize=(15, 10))
     axis1 = figure1.subplots()
-    _spread.plot(ax=axis1, color='black')
+    _spread.plot(ax=axis1, color='magenta')
     axis1.set_xlim(begin_date, end_date)
     # Equilibrium level is a fitted quantity too — take it from train.
     axis1.axhline(_spread.loc[:split_date].mean(), color='red', linestyle=':')
@@ -1165,7 +1192,7 @@ def _(Asset_1, Asset_2, adfuller, hedge_coef, mo, save_btn):
 
 
 @app.cell
-def _(Figure, begin_date, end_date, index, mo, np, pairs, plt, price_ratio, save_btn):
+def _(Figure, begin_date, end_date, index, mo, pairs, price_ratio, save_btn):
     mo.stop(not save_btn.value)
 
 
@@ -1175,7 +1202,7 @@ def _(Figure, begin_date, end_date, index, mo, np, pairs, plt, price_ratio, save
 
     figure2 = Figure(figsize=(15, 10))
     axis2 = figure2.subplots()
-    price_ratio_z_score.plot(ax=axis2, color='black')
+    price_ratio_z_score.plot(ax=axis2, color='magenta')
     axis2.axhline(price_ratio_z_score.mean(), color='darkgrey')
     axis2.axhline(1, color='tomato', linestyle='dashed')
     axis2.axhline(2, color='darkred', alpha=.4)
@@ -1191,7 +1218,7 @@ def _(Figure, begin_date, end_date, index, mo, np, pairs, plt, price_ratio, save
 
 
 @app.cell
-def _(Figure, index, mo, pairs, plt, price_ratio, save_btn):
+def _(Figure, index, mo, pairs, price_ratio, save_btn):
     mo.stop(not save_btn.value)
 
 
@@ -1200,7 +1227,7 @@ def _(Figure, index, mo, pairs, plt, price_ratio, save_btn):
 
     figure3 = Figure(figsize=(15, 10))
     axis3 = figure3.subplots()
-    price_ratio.plot(ax=axis3, color='black')
+    price_ratio.plot(ax=axis3, color='magenta')
     price_ratio_10D_MAVG.plot(ax=axis3, color='magenta', linewidth=2, alpha=.8)
     price_ratio_60D_MAVG.plot(ax=axis3, color='b', linewidth=3)
     axis3.axhline(price_ratio.mean(), color='darkgrey', linestyle='dashed')
@@ -1220,7 +1247,6 @@ def _(
     index,
     mo,
     pairs,
-    plt,
     price_ratio,
     price_ratio_10D_MAVG,
     price_ratio_60D_MAVG,
@@ -1234,7 +1260,7 @@ def _(
 
     figure4 = Figure(figsize=(15, 10))
     axis4 = figure4.subplots()
-    Rolling_Z_Score.plot(ax=axis4, color='black')
+    Rolling_Z_Score.plot(ax=axis4, color='magenta')
     axis4.set_xlim(begin_date, end_date)
     axis4.axhline(0, color='black')
     axis4.axhline(1, color='tomato', linestyle='dashed')
@@ -1256,7 +1282,6 @@ def _(
     index,
     mo,
     pairs,
-    plt,
     price_ratio,
     save_btn,
 ):
@@ -1765,13 +1790,10 @@ def _(
 
     Kalman_Filter = True
     return (
-        Kalman_Filter,
         KALMAN_WARMUP,
-        Z_WINDOW,
-        adj_close,
+        Kalman_Filter,
         first_stock_data,
         hedge_ratio_series,
-        innovations,
         mkf,
         result,
         result1,
@@ -1789,19 +1811,26 @@ def _(mo, save_btn):
         label="Prophet forecast horizon (trading sessions)",
     )
     forecast_cost = mo.ui.number(
-        start=0, stop=1000, step=5, value=20,
+        start=0, stop=1000, step=5, value=0,
         label="Round-trip cost allowance (bps of total entry notional)",
     )
     forecast_buffer = mo.ui.number(
-        start=0, stop=1000, step=5, value=50,
+        start=0, stop=1000, step=5, value=0,
         label="Forecast error buffer (bps of total entry notional)",
     )
     mo.vstack([
-        mo.md("**Prophet entry confirmation is required.** Both price forecasts "
+        mo.md("**Prophet entry confirmation is required.** Prophet (flat growth) is "
+              "trained only on data since the pair was selected and forecasts each leg "
+              "reverting toward that level; the hedged position's projected reversion "
               "must support the Kalman direction after the cost allowance and buffer. "
+              "The first 60 sessions after selection have too little data, so no "
+              "entries are confirmed then. "
               "Disagreement or an unavailable forecast means hold. Exits and stop losses "
               "do not require a forecast. The horizon is a lookahead, not a forced exit. "
-              "The cost and buffer defaults are editable assumptions, not calibrated estimates."),
+              "Alpaca paper trading charges no commission or fees, so the cost "
+              "allowance defaults to 0; fills still cross the bid-ask spread, so "
+              "raise it for wide-spread names or live trading. A 0 buffer tested "
+              "best on the train window."),
         forecast_horizon, forecast_cost, forecast_buffer,
     ])
     return forecast_buffer, forecast_cost, forecast_horizon
@@ -1816,18 +1845,92 @@ def _(
     forecast_horizon,
     pair_risk,
     second_stock_data,
+    split_date,
 ):
     # An explicit graph edge ensures actual-position exits are checked before
     # any historical Prophet fitting starts. A blocked entry still permits study.
     assert pair_risk['checked']
+    # Prophet learns only from data collected since the pair was selected
+    # (split_date: the pair was chosen on the train window before it).
     entry_filter = ProphetEntryFilter(
         first_stock_data.set_index('ds')['y'],
         second_stock_data.set_index('ds')['y'],
         horizon=int(forecast_horizon.value),
         cost_bps=float(forecast_cost.value),
         buffer_bps=float(forecast_buffer.value),
+        start=split_date,
     )
     return (entry_filter,)
+
+
+@app.cell
+def _(section_header):
+    section_header("Today's Signal", "04.0")
+    return
+
+
+@app.cell
+def _(
+    Figure,
+    entry_filter,
+    index,
+    mkf,
+    mo,
+    pairs,
+    pd,
+    result,
+    series,
+    simulation,
+    trade_log,
+):
+    # Today's decision, always shown: Kalman on the latest bar, Prophet's view
+    # from today, and the verdict the order cell acts on (same replay).
+    from pair_forecast import spread_outlook as _outlook
+    from pair_forecast import todays_verdict as _verdict
+    _today = pd.Timestamp(result.index[-1]).normalize()
+    _z = float(series.reindex(result.index).iloc[-1])
+    _slope = float(mkf.x[0, -1])
+    _decision = _verdict(trade_log, simulation[7], _today, _z)
+    _a, _b = pairs[index][1], pairs[index][0]
+    _panels = [mo.callout(mo.md(
+        f"### {_decision['action']} · {_today.date()}\n\n{_decision['detail']}\n\n"
+        f"Kalman z today = **{_z:+.2f}** (enter beyond ±1.25, exit inside ±0.5). "
+        f"z > 0: buy {_b} / sell {_a}; z < 0: sell {_b} / buy {_a}."),
+        kind={'ENTER': 'success', 'EXIT': 'warn', 'HOLD': 'neutral'}[_decision['action']])]
+    try:
+        _forecast = entry_filter.forecast(_today)
+    except Exception as _exc:
+        _panels.append(mo.md(f"Prophet forecast from today is unavailable: {_exc}"))
+    else:
+        _view = _outlook(_forecast, _slope)
+        _panels.append(mo.md(
+            f"**Prophet's view:** the hedged spread {_b} − {_slope:.3f}×{_a} is "
+            f"**{_view['current']:.2f}** today; Prophet (trained since the pair was selected) "
+            f"expects it to move toward **{_view['target']:.2f}**, so it would confirm a "
+            f"**{_view['confirms']}** trade and veto the opposite. This is a level the "
+            f"spread tends to return to, not a day-by-day price path."))
+        _hist_a, _hist_b = _forecast['histories']
+        _spread = pd.Series(_hist_b['y'].to_numpy() - _slope * _hist_a['y'].to_numpy(),
+                            index=_hist_a['ds']).tail(60)
+        _z_recent = series.dropna().tail(60)
+        _figure = Figure(figsize=(12, 6))
+        _top, _bottom = _figure.subplots(2, 1, sharex=True)
+        _top.plot(_z_recent.index, _z_recent.values, label='Kalman z')
+        for _level, _style in ((1.25, '--'), (-1.25, '--'), (0.5, ':'), (-0.5, ':')):
+            _top.axhline(_level, color='grey', linestyle=_style, linewidth=.8)
+        _top.set_title('Kalman signal: enter beyond ±1.25 (dashed), exit inside ±0.5 (dotted)')
+        _top.legend(loc='upper left')
+        _bottom.plot(_spread.index, _spread.values, label=f'Spread {_b} − {_slope:.3f}×{_a}')
+        _bottom.axhline(_view['target'], color='orange', linestyle='--',
+                        label=f"Prophet level {_view['target']:.2f}")
+        _bottom.set_title("Hedged spread and Prophet's expected level")
+        _bottom.legend(loc='upper left')
+        for _axis in (_top, _bottom):
+            _axis.axvline(_today, color='grey', linestyle=':')
+        _figure.tight_layout()
+        _panels.append(mo.mpl.interactive(_figure))
+    mo.vstack(_panels)
+    return
 
 
 @app.cell
@@ -1884,7 +1987,7 @@ def _(section_header):
 
 
 @app.cell
-def _(Figure, KALMAN_WARMUP, mkf, mo, plt, save_btn, series):
+def _(Figure, KALMAN_WARMUP, mkf, mo, save_btn, series):
     mo.stop(not save_btn.value)
 
 
@@ -2006,23 +2109,36 @@ def _(section_header):
 
 
 @app.cell
-def _(duckdb, index, market_cap_input, mo, pairs, save_btn, sector_input):
+def _(
+    duckdb,
+    index,
+    market_cap_input,
+    mo,
+    pair_exec,
+    pairs,
+    save_btn,
+    sector_input,
+    trading_client,
+):
     mo.stop(not save_btn.value)
 
-    item = {'sector': sector_input, 'Size': market_cap_input, 'Asset1': pairs[index][0], 'Asset2': pairs[index][1]}
+    # Assets only ever holds filled, open pairs: the pair just traded is added
+    # once both legs are Alpaca positions, and closed pairs are removed.
+    # Reading `pair_exec` makes this run after the order cell (keep it in code,
+    # not a comment: marimo drops cell inputs that are not referenced).
+    from pair_execution import reconcile_pair_registry as _reconcile
+    _just_ordered = any(_r.get('outcome') == 'submitted' for _r in pair_exec['rows'])
     with duckdb.connect('data/quant_trading.db') as _con:
-        query = '\n        SELECT * FROM Assets\n        WHERE sector = ? AND Size = ? AND Asset1 = ? AND Asset2 = ?\n    '
-        result_1 = _con.execute(query, (item['sector'], item['Size'], item['Asset1'], item['Asset2'])).fetchall()
-        if result_1:
-            print('Entry already exists')
-        else:
-            last_id = _con.execute('SELECT MAX(id) FROM Assets').fetchone()[0]
-            item['id'] = last_id + 1 if last_id is not None else 1
-            _con.execute('INSERT INTO Assets (id, sector, Asset1, Asset2, Size) VALUES (?, ?, ?, ?, ?)', (int(item['id']), str(item['sector']), str(item['Asset1']), str(item['Asset2']), str(item['Size'])))
-            print('Inserted successfully')
+        _reconcile(_con, trading_client,
+                   [(sector_input, market_cap_input, pairs[index][0], pairs[index][1])])
         _items_df = _con.execute('SELECT * FROM Assets').df()
 
-    mo.ui.dataframe(_items_df)
+    mo.vstack([
+        mo.md('**Active pairs (filled and open on Alpaca)**'),
+        mo.ui.dataframe(_items_df) if not _items_df.empty else mo.md('No active pairs.'),
+        mo.md('Orders were just submitted: the pair is added here once both legs fill '
+              '(queued orders fill at the next open).') if _just_ordered else mo.md(''),
+    ])
     return
 
 
@@ -2042,12 +2158,13 @@ def _(
     mo.stop(not save_btn.value)
 
     # Broker-position exits have already been checked, before Prophet fitting.
-    # The replay supplies NEW entries only; simulated closes cannot open an
-    # inverse position in an account that never executed the historical entry.
+    # Any buy/sell rows the replay logs for today are traded when Alpaca is flat
+    # on the pair (user's choice): entries, and also Close rows, which from a
+    # flat account open that position; the exit check manages it afterwards.
     signal_date = pd.Timestamp(result.index[-1]).date()
     _dates = pd.to_datetime(trade_log['Date'])
     _entries = trade_log[
-        (_dates.dt.date == signal_date) & trade_log['Trade_Type'].isin(['High', 'Low'])
+        (_dates.dt.date == signal_date) & trade_log['Trade_Type'].isin(['High', 'Low', 'Close'])
     ]
     if pair_risk['entry_allowed']:
         pair_exec = submit_pair_entries(
