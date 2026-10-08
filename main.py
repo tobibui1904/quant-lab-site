@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import marimo
 import otc_watchlist
+import pm_positions
 import hub_events
 from site_gate import SiteGate
 
@@ -450,7 +451,9 @@ _HUB_TEMPLATE = """<!DOCTYPE html>
 
   /* ── Account overview: the book, marked to market ── */
   .acct-row {
-    display: grid; grid-template-columns: 1fr 1fr;
+    /* auto-fit collapses the track of a hidden card, so two venues still
+       split the row evenly and three sit side by side */
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 14px; text-align: left;
   }
   @media (max-width: 980px) { .acct-row { grid-template-columns: 1fr; } }
@@ -460,13 +463,13 @@ _HUB_TEMPLATE = """<!DOCTYPE html>
     display: flex; flex-direction: column; gap: 12px;
   }
   .acct[hidden] { display: none; }
-  .acct-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-  .acct-name { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--text); }
+  .acct-head { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 10px; flex-wrap: wrap; }
+  .acct-name { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--text); white-space: nowrap; }
   .acct-tag {
     font-family: var(--mono); font-style: normal; font-size: 9px;
     letter-spacing: .18em; text-transform: uppercase; color: var(--faint); margin-left: 9px;
   }
-  .acct-asof { font-size: 9.5px; letter-spacing: .1em; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .acct-asof { font-size: 9.5px; letter-spacing: .1em; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .acct-hero { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   .acct-nav { font-size: 27px; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: .01em; transition: color .5s; }
   .acct-delta { font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -553,6 +556,33 @@ _HUB_TEMPLATE = """<!DOCTYPE html>
   .bl-table td.neg { color: #E07B4F; }
   .bl-table td.bl-long { color: var(--green); }
   .bl-table td.bl-short { color: #E07B4F; }
+  /* eleven columns: tighter gutters so Resolve stays in view without scrolling */
+  #blotter3 .bl-table th, #blotter3 .bl-table td { padding-left: 9px; padding-right: 9px; }
+  #blotter3 td.bl-closes { line-height: 1.25; }
+  #blotter3 td.bl-closes span { display: block; font-size: 9.5px; color: var(--faint); }
+  /* names wrap (rows are two lines anyway) so Closes and Resolve stay in
+     view even zoomed in; P/L stacks $ over % for the same reason */
+  #blotter3 td.bl-market { white-space: normal; min-width: 140px; max-width: 190px; line-height: 1.3; }
+  #blotter3 td.bl-pl { line-height: 1.25; }
+  #blotter3 td.bl-pl small { display: block; font-size: 9.5px; }
+  .bl-res {
+    font: inherit; font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+    background: none; border: 1px solid var(--border); color: var(--faint);
+    padding: 3px 8px; border-radius: 5px; cursor: not-allowed; opacity: .55;
+  }
+  .bl-res.live {
+    cursor: pointer; opacity: 1; color: var(--green-hi); border-color: rgba(58,196,147,.45);
+    transition: color .15s, background .15s, border-color .15s;
+  }
+  .bl-res.live:hover { background: rgba(29,158,117,.12); }
+  .bl-res.live:focus-visible { outline: 1px solid var(--green-hi); outline-offset: 1px; }
+  .bl-res.armed { color: var(--text); background: rgba(29,158,117,.22); border-color: var(--green-hi); }
+  /* close sells at market, so it reads amber rather than resolve's green */
+  .bl-close.live { color: #E0A84F; border-color: rgba(224,168,79,.45); }
+  .bl-close.live:hover { background: rgba(224,168,79,.12); }
+  .bl-close.armed { color: var(--text); background: rgba(224,168,79,.22); border-color: #E0A84F; }
+  #blotter3 td.bl-acts { white-space: nowrap; }
+  #blotter3 td.bl-acts .bl-res + .bl-res { margin-left: 5px; }
   .bl-empty td { text-align: center; color: var(--faint); padding: 20px 14px; }
 
   .bl-x {
@@ -576,9 +606,11 @@ _HUB_TEMPLATE = """<!DOCTYPE html>
     .acct     { animation: rise .55s cubic-bezier(.2,.7,.3,1) backwards; }
     #acct-oanda  { animation-delay: .22s; }
     #acct-alpaca { animation-delay: .28s; }
+    #acct-polymarket { animation-delay: .34s; }
     .blotter  { animation: rise .55s cubic-bezier(.2,.7,.3,1) backwards; }
     #blotter  { animation-delay: .38s; }
     #blotter2 { animation-delay: .46s; }
+    #blotter3 { animation-delay: .54s; }
   }
   @keyframes rise {
     from { opacity: 0; transform: translateY(10px); }
@@ -705,6 +737,26 @@ __NAV__
               <div><span class="as-label">Prior close</span><span class="as-val" id="aa-prior">&mdash;</span></div>
             </div>
           </section>
+          <section class="acct" id="acct-polymarket" hidden>
+            <div class="acct-head">
+              <span class="acct-name">Polymarket<span class="acct-tag">events &middot; paper</span></span>
+              <span class="acct-asof" id="ap-asof"></span>
+            </div>
+            <div class="acct-hero">
+              <span class="acct-nav" id="ap-nav">&mdash;</span>
+              <span class="acct-delta" id="ap-delta"></span>
+            </div>
+            <div class="spark-wrap">
+              <svg class="spark" id="ap-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div class="spark-tip" id="ap-tip" hidden></div>
+            </div>
+            <div class="acct-stats">
+              <div><span class="as-label">Cash</span><span class="as-val" id="ap-cash">&mdash;</span></div>
+              <div><span class="as-label">Positions value</span><span class="as-val" id="ap-pv">&mdash;</span></div>
+              <div><span class="as-label">Starting balance</span><span class="as-val" id="ap-start">&mdash;</span></div>
+              <div><span class="as-label">Open positions</span><span class="as-val" id="ap-open">&mdash;</span></div>
+            </div>
+          </section>
         </div>
         <section class="blotter" id="blotter" hidden>
           <div class="bl-head">
@@ -741,6 +793,25 @@ __NAV__
                 <th>Total P/L (USD)</th><th>P/L (%)</th><th></th>
               </tr></thead>
               <tbody id="bl2-body"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="blotter" id="blotter3" hidden>
+          <div class="bl-head">
+            <span class="bl-title">Polymarket Positions</span>
+            <span class="bl-line"></span>
+            <span class="bl-src" id="bl3-status">
+              <span class="bl-dot"></span><span id="bl3-status-text">polymarket</span>
+            </span>
+          </div>
+          <div class="bl-scroll">
+            <table class="bl-table">
+              <thead><tr>
+                <th class="l">Market</th><th class="l">Outcome</th><th>Shares</th>
+                <th>Avg Entry</th><th>Mid</th><th>Cost</th><th>Value</th>
+                <th>P/L</th><th class="l">Closes (ET)</th><th></th>
+              </tr></thead>
+              <tbody id="bl3-body"></tbody>
             </table>
           </div>
         </section>
@@ -1017,7 +1088,49 @@ __NAV__
   const fmtQty = v => v.toLocaleString('en-US', { maximumFractionDigits: 4 });
   const signed = (v, dec) => (v > 0 ? '+' : '') + fmtNum(v, dec);
   const plClass = v => v > 0 ? 'pos' : (v < 0 ? 'neg' : '');
-  const sideCell = s => '<td class="l ' + (s === 'LONG' ? 'bl-long' : 'bl-short') + '">' + s + '</td>';
+  const esc = s => String(s).replace(/[&<>"]/g,
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const sideCell = s =>'<td class="l ' + (s === 'LONG' ? 'bl-long' : 'bl-short') + '">' + s + '</td>';
+
+  // Polymarket close, in New York time. kind: 'closed' = when Polymarket
+  // actually closed it; 'start' = a game's tip-off (it closes only after the
+  // final whistle, at no fixed time); 'end' = the scheduled end date.
+  function closesCell(ends) {
+    if (!ends || !ends.at) return '<td class="l">…</td>';
+    const t = new Date(ends.at);
+    const days = Math.ceil((t - Date.now()) / 86400000);
+    const tz = { timeZone: 'America/New_York' };
+    const date = t.toLocaleDateString('en-US', { ...tz, month: 'short', day: 'numeric', year: 'numeric' });
+    const hour = t.toLocaleTimeString('en-US', { ...tz, hour: 'numeric', minute: '2-digit' });
+    const tag = { closed: ' · closed', start: ' · game start' }[ends.kind] || '';
+    const tip = ends.kind === 'closed' ? 'Polymarket closed this market'
+      : ends.kind === 'start' ? 'Game starts; the market closes after it ends'
+      : days > 1 ? 'in ' + days + ' days' : days === 1 ? 'within a day' : 'scheduled end has passed';
+    return '<td class="l bl-closes" title="' + tip + '">' + date + '<span>' + hour + tag + '</span></td>';
+  }
+
+  function resolveBtn(r) {
+    const armed = blotterArmed === 'polymarket:' + r.id;
+    if (!r.settled) {
+      return '<button class="bl-res" disabled title="Market still open: Resolve unlocks once it settles">resolve</button>';
+    }
+    return '<button class="bl-res live' + (armed ? ' armed' : '') + '" data-id="' + r.id
+      + '" title="Pay out this market into cash">' + (armed ? 'confirm?' : 'resolve') + '</button>';
+  }
+
+  // Close = sell every share now at the live bids (fill-or-kill). First click
+  // fetches a quote and shows what it would pay; second click within 6s sells.
+  let pmCloseArm = null;    // {key, label}
+  function closeBtn(r) {
+    if (r.settled) {
+      return '<button class="bl-res" disabled title="Market closed: no book to sell into; use Resolve">close</button>';
+    }
+    const key = r.id + '|' + r.outcome;
+    const armed = pmCloseArm && pmCloseArm.key === key;
+    return '<button class="bl-res bl-close live' + (armed ? ' armed' : '') + '" data-id="' + r.id
+      + '" data-outcome="' + esc(r.outcome) + '" title="Sell the whole position now at the live bids">'
+      + (armed ? pmCloseArm.label : 'close') + '</button>';
+  }
 
   function xCell(venue, id) {
     const armed = blotterArmed === venue + ':' + id;
@@ -1058,6 +1171,30 @@ __NAV__
         + '<td class="' + plClass(r.pl_pct) + '">' + signed(r.pl_pct, 2) + '%</td>'
         + xCell('alpaca', r.symbol) + '</tr>',
     },
+    // Two actions per row instead of ✕: Close sells the whole position at the
+    // live bids (pmClose, quote then confirm) and Resolve pays out a settled
+    // market (pmResolve). Buying stays on the prediction-market desk.
+    polymarket: {
+      sec: 'blotter3', body: 'bl3-body', lamp: 'bl3-status', txt: 'bl3-status-text',
+      cols: 10, hideRe: /pm-trader database not found/,
+      // mid/value/P&L cells carry the token in their ids so the live feed
+      // (pmApply) can tick them in place between polls
+      row: r => '<tr>'
+        + '<td class="l bl-market" title="' + esc(r.market) + '">' + esc(r.market) + '</td>'
+        + '<td class="l">' + esc(r.outcome)
+          + (r.settled ? ' <span title="Market closed; marked at its payout until resolved on the desk">· settled</span>' : '')
+          + '</td>'
+        + '<td>' + fmtNum(r.shares, 2) + '</td>'
+        + '<td>' + fmtNum(r.avg, 3) + '</td>'
+        + '<td><span id="pm-mid-' + r.token + '">' + (r.price == null ? '…' : fmtNum(r.price, 3)) + '</span></td>'
+        + '<td>' + fmtNum(r.cost, 2) + '</td>'
+        + '<td><span id="pm-val-' + r.token + '">' + (r.value == null ? '…' : fmtNum(r.value, 2)) + '</span></td>'
+        + '<td class="bl-pl ' + plClass(r.pl_usd ?? 0) + '" id="pm-pl-' + r.token + '">'
+          + '<span id="pm-plu-' + r.token + '">' + (r.pl_usd == null ? '…' : signed(r.pl_usd, 2)) + '</span>'
+          + '<small id="pm-plp-' + r.token + '">' + (r.pl_pct == null ? '' : signed(r.pl_pct, 2) + '%') + '</small></td>'
+        + closesCell(r.ends)
+        + '<td class="bl-acts">' + closeBtn(r) + resolveBtn(r) + '</td></tr>',
+    },
   };
 
   function setLamp(v, live, msg) {
@@ -1073,6 +1210,193 @@ __NAV__
       : '<tr class="bl-empty"><td colspan="' + v.cols + '">No open positions.</td></tr>';
     body.querySelectorAll('.bl-x').forEach(btn =>
       btn.addEventListener('click', () => blotterClose(btn.dataset.venue, btn.dataset.id, btn)));
+    body.querySelectorAll('.bl-res.live:not(.bl-close)').forEach(btn =>
+      btn.addEventListener('click', () => pmResolve(btn.dataset.id, btn)));
+    body.querySelectorAll('.bl-close.live').forEach(btn =>
+      btn.addEventListener('click', () => pmClose(btn.dataset.id, btn.dataset.outcome, btn)));
+  }
+
+  async function pmClose(id, outcome, btn) {
+    const key = id + '|' + outcome, v = VENUES.polymarket;
+    const path = encodeURIComponent(id) + '/' + encodeURIComponent(outcome);
+    const say = (ok, msg) => { v.holdUntil = Date.now() + 8000; setLamp(v, ok, msg.slice(0, 56).toLowerCase()); };
+    if (!pmCloseArm || pmCloseArm.key !== key) {
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        const q = await (await fetch('/api/polymarket/quote/' + path)).json();
+        if (!q.ok) { say(false, q.error || 'quote failed'); pollVenue('polymarket'); return; }
+        if (!q.filled) { say(false, 'book too thin to sell it all now'); pollVenue('polymarket'); return; }
+        pmCloseArm = { key, label: 'sell ' + money(q.proceeds) + '?', shares: q.shares, proceeds: q.proceeds };
+        say(q.pl >= 0, 'close → ' + money(q.proceeds) + ' · p/l ' + signed(q.pl, 2) + ' · click again');
+        setTimeout(() => {
+          if (pmCloseArm && pmCloseArm.key === key) { pmCloseArm = null; pollVenue('polymarket'); }
+        }, 6000);
+      } catch (e) {
+        say(false, 'polymarket · offline');
+      }
+      pollVenue('polymarket');
+      return;
+    }
+    const quoted = pmCloseArm;
+    pmCloseArm = null;
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      const qs = '?shares=' + encodeURIComponent(quoted.shares) + '&proceeds=' + encodeURIComponent(quoted.proceeds);
+      const d = await (await fetch('/api/polymarket/close/' + path + qs, { method: 'POST' })).json();
+      say(d.ok && d.pl >= 0, d.ok
+        ? 'closed · got ' + money(d.proceeds) + ' · p/l ' + signed(d.pl, 2)
+        : (d.error || 'close failed'));
+    } catch (e) {
+      say(false, 'polymarket · offline');
+    }
+    pollVenue('polymarket'); pollAccount('polymarket');
+  }
+
+  // Two-click like ✕: arm, then confirm within 4s. The hub runs pm-trader's
+  // own `resolve`, so the payout lands in cash exactly as from the desk.
+  async function pmResolve(id, btn) {
+    const key = 'polymarket:' + id;
+    const v = VENUES.polymarket;
+    if (blotterArmed !== key) {
+      blotterArmed = key;
+      btn.classList.add('armed');
+      btn.textContent = 'confirm?';
+      setTimeout(() => {
+        if (blotterArmed === key) { blotterArmed = null; pollVenue('polymarket'); }
+      }, 4000);
+      return;
+    }
+    blotterArmed = null;
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      const res = await fetch('/api/polymarket/resolve/' + encodeURIComponent(id), { method: 'POST' });
+      const data = await res.json();
+      v.holdUntil = Date.now() + 8000;   // keep the outcome readable past the next poll
+      setLamp(v, data.ok, data.ok
+        ? 'resolved · paid ' + money(data.payout)
+        : (data.error || 'resolve failed').slice(0, 48).toLowerCase());
+    } catch (e) {
+      setLamp(v, false, 'polymarket · offline');
+    }
+    pollVenue('polymarket'); pollAccount('polymarket');
+  }
+
+  // ── Polymarket live feed ──
+  // The browser subscribes straight to Polymarket's public market WebSocket
+  // for the held outcome tokens, so mid/value/P&L and the account card tick
+  // the moment the book moves, like polymarket.com. The 3s poll remains the
+  // source of truth (positions, cash, settlement) and the fallback if the
+  // socket drops. Price rule = Polymarket's (and pm_positions.display_price):
+  // the midpoint, unless the spread is wider than $0.10, then the last trade.
+  const PM_WS = 'wss://ws-subscriptions-clob.polymarket.com/ws/market';
+  const pmBook = {};      // token -> {bid, ask, last}
+  let pmRows = {};        // token -> latest polled row
+  let pmAcct = null;      // latest polled account (cash, starting)
+  let pmWs = null, pmWsKey = '', pmPing = null, pmRetry = null;
+
+  function pmLivePrice(token) {
+    const b = pmBook[token];
+    if (!b || b.bid == null || b.ask == null) return null;
+    const mid = (b.bid + b.ask) / 2, spread = b.ask - b.bid;
+    return spread > 0.10 + 1e-9 && b.last != null ? b.last : mid;
+  }
+
+  function pmApply(token) {
+    const r = pmRows[token];
+    if (!r || r.settled) return;          // settled rows are marked at payout
+    const p = pmLivePrice(token);
+    if (p == null) return;
+    r.price = p;
+    r.value = r.shares * p;
+    r.pl_usd = r.value - r.cost;
+    r.pl_pct = r.cost ? 100 * r.pl_usd / r.cost : 0;
+    setVal('pm-mid-' + token, p, fmtNum(p, 3));
+    setVal('pm-val-' + token, r.value, fmtNum(r.value, 2));
+    setVal('pm-plu-' + token, r.pl_usd, signed(r.pl_usd, 2));
+    const pct = document.getElementById('pm-plp-' + token);
+    if (pct) pct.textContent = signed(r.pl_pct, 2) + '%';
+    const cell = document.getElementById('pm-pl-' + token);
+    if (cell) cell.className = 'bl-pl ' + plClass(r.pl_usd);
+    pmCard();
+  }
+
+  // card = polled cash + live marks; between ticks the poll sets it as usual
+  function pmCard() {
+    if (!pmAcct) return;
+    const rows = Object.values(pmRows);
+    if (rows.some(r => r.value == null)) return;  // an unpriced row: leave the polled numbers
+    const pv = rows.reduce((s, r) => s + r.value, 0);
+    const total = pmAcct.cash + pv, pnl = total - pmAcct.starting;
+    setVal('ap-nav', total, money(total));
+    setVal('ap-pv', pv, money(pv));
+    document.getElementById('ap-delta').innerHTML =
+      deltaHtml('total', pnl, 100 * pnl / (pmAcct.starting || 1));
+    document.getElementById('ap-asof').textContent =
+      'as of ' + new Date().toLocaleTimeString('en-US', { hour12: false });
+  }
+
+  function pmOnMessage(ev) {
+    if (typeof ev.data !== 'string' || ev.data[0] !== '[' && ev.data[0] !== '{') return; // PONG
+    let msgs;
+    try { msgs = JSON.parse(ev.data); } catch (e) { return; }
+    const touched = new Set();
+    for (const m of (Array.isArray(msgs) ? msgs : [msgs])) {
+      if (m.event_type === 'book') {
+        const b = pmBook[m.asset_id] = pmBook[m.asset_id] || {};
+        b.bid = (m.bids || []).reduce((x, l) => Math.max(x, +l.price), -Infinity);
+        b.ask = (m.asks || []).reduce((x, l) => Math.min(x, +l.price), Infinity);
+        if (!isFinite(b.bid)) b.bid = null;
+        if (!isFinite(b.ask)) b.ask = null;
+        touched.add(m.asset_id);
+      } else if (m.event_type === 'price_change') {
+        for (const c of (m.price_changes || [])) {
+          const b = pmBook[c.asset_id] = pmBook[c.asset_id] || {};
+          if (c.best_bid != null) b.bid = +c.best_bid;
+          if (c.best_ask != null) b.ask = +c.best_ask;
+          touched.add(c.asset_id);
+        }
+      } else if (m.event_type === 'last_trade_price') {
+        (pmBook[m.asset_id] = pmBook[m.asset_id] || {}).last = +m.price;
+        touched.add(m.asset_id);
+      }
+    }
+    touched.forEach(t => { if (pmRows[t]) pmApply(t); });
+  }
+
+  // (re)subscribe whenever the set of open, unsettled tokens changes
+  function pmSync(rows) {
+    pmRows = {};
+    rows.forEach(r => { if (r.token) pmRows[r.token] = { ...r }; });
+    // a fresh render shows polled values; re-apply anything the feed knows newer
+    Object.keys(pmRows).forEach(t => pmApply(t));
+    const tokens = rows.filter(r => r.token && !r.settled).map(r => r.token).sort();
+    const key = tokens.join(',');
+    if (key === pmWsKey && pmWs) return;
+    pmWsKey = key;
+    pmConnect(tokens);
+  }
+
+  function pmConnect(tokens) {
+    clearInterval(pmPing); clearTimeout(pmRetry);
+    if (pmWs) { pmWs.onclose = null; pmWs.close(); pmWs = null; }
+    if (!tokens.length || typeof WebSocket === 'undefined') return;
+    const ws = pmWs = new WebSocket(PM_WS);
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ assets_ids: tokens, type: 'market' }));
+      pmPing = setInterval(() => { if (ws.readyState === 1) ws.send('PING'); }, 10000);
+      setLamp(VENUES.polymarket, true, 'polymarket · streaming');
+    };
+    ws.onmessage = pmOnMessage;
+    ws.onclose = () => {
+      clearInterval(pmPing);
+      if (pmWs !== ws) return;
+      pmWs = null;            // the poll keeps the table current meanwhile
+      pmRetry = setTimeout(() => pmConnect(tokens), 5000);
+    };
+    ws.onerror = () => ws.close();
   }
 
   async function blotterClose(venue, id, btn) {
@@ -1115,8 +1439,10 @@ __NAV__
         return;
       }
       sec.hidden = false;
-      setLamp(v, true, name + ' · live');
+      const streaming = name === 'polymarket' && pmWs && pmWs.readyState === 1;
+      if (!(v.holdUntil > Date.now())) setLamp(v, true, name + (streaming ? ' · streaming' : ' · live'));
       renderRows(name, data.rows);
+      if (name === 'polymarket') pmSync(data.rows);
     } catch (e) {
       setLamp(v, false, name + ' · offline');
     }
@@ -1189,7 +1515,10 @@ __NAV__
       const t = new Date(hist[i][0] * 1000);
       tip.hidden = false;
       tip.style.left = (x + '%');
+      // multi-day curves (the Polymarket book) need the date, not just the time
+      const multiDay = hist[hist.length - 1][0] - hist[0][0] > 86400;
       tip.textContent = money(hist[i][1]) + ' · '
+        + (multiDay ? t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' : '')
         + t.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
       let hair = svg.querySelector('.spark-hair');
       if (!hair) {
@@ -1216,7 +1545,7 @@ __NAV__
       const res  = await fetch('/api/' + name + '/account');
       const data = await res.json();
       if (!data.ok) {
-        if (/(OANDA_TOKEN|ALPACA_API)/.test(data.error || '')) sec.hidden = true;
+        if (/(OANDA_TOKEN|ALPACA_API|pm-trader database not found)/.test(data.error || '')) sec.hidden = true;
         return;
       }
       sec.hidden = false;
@@ -1232,6 +1561,20 @@ __NAV__
         setVal('ao-trades', a.open_trades, String(a.open_trades));
         document.getElementById('ao-asof').textContent = asof;
         drawSpark('ao-spark', data.history, data.base);
+      } else if (name === 'polymarket') {
+        // no prior close on a prediction book: the delta and the dotted
+        // baseline are both measured from the starting balance
+        pmAcct = a;     // the live feed re-marks the card from this cash
+        setVal('ap-nav', a.total, money(a.total));
+        document.getElementById('ap-delta').innerHTML =
+          deltaHtml('total', a.pnl, 100 * a.pnl / (a.starting || 1));
+        setVal('ap-cash', a.cash, money(a.cash));
+        setVal('ap-pv', a.positions_value, money(a.positions_value));
+        setVal('ap-start', a.starting, money0(a.starting));
+        setVal('ap-open', a.open_positions, String(a.open_positions));
+        document.getElementById('ap-asof').textContent = asof;
+        drawSpark('ap-spark', data.history, data.base);
+        pmCard();       // keep live marks rather than flip back to the polled snapshot
       } else {
         const day = a.equity - a.last_equity;
         setVal('aa-nav', a.equity, money(a.equity));
@@ -1248,8 +1591,8 @@ __NAV__
   }
 
   function pollBlotter() {
-    pollVenue('oanda'); pollVenue('alpaca');
-    pollAccount('oanda'); pollAccount('alpaca');
+    pollVenue('oanda'); pollVenue('alpaca'); pollVenue('polymarket');
+    pollAccount('oanda'); pollAccount('alpaca'); pollAccount('polymarket');
   }
 
   // ── Sidebar hide/show: toggle button, Ctrl+B, remembered per browser ──
@@ -1295,6 +1638,7 @@ __NAV__
 
     bindSpark('ao-spark', 'ao-tip');
     bindSpark('aa-spark', 'aa-tip');
+    bindSpark('ap-spark', 'ap-tip');
 
     document.getElementById('btn-sidebar').addEventListener('click', toggleSidebar);
     document.addEventListener('keydown', e => {
@@ -1675,6 +2019,46 @@ async def alpaca_positions():
         return {"ok": False, "error": "ALPACA_API_KEY not set"}
     try:
         return {"ok": True, "rows": await asyncio.to_thread(_fetch_alpaca_blotter)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+
+@hub.get("/api/polymarket/account")
+async def polymarket_account():
+    try:
+        acct, curve = await asyncio.to_thread(pm_positions.fetch_account)
+        # rebuilt curve (refreshed every few minutes) + a live final point
+        history = curve + [[int(time.time()), acct["total"]]]
+        return {"ok": True, "acct": acct, "history": history, "base": acct["starting"]}
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+
+@hub.post("/api/polymarket/resolve/{condition_id}")
+async def polymarket_resolve(condition_id: str):
+    try:
+        return await asyncio.to_thread(pm_positions.resolve, condition_id)
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+
+@hub.get("/api/polymarket/quote/{condition_id}/{outcome}")
+async def polymarket_quote(condition_id: str, outcome: str):
+    try:
+        return await asyncio.to_thread(pm_positions.quote_close, condition_id, outcome)
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+
+@hub.post("/api/polymarket/close/{condition_id}/{outcome}")
+async def polymarket_close(condition_id: str, outcome: str, shares: float, proceeds: float):
+    # shares/proceeds = what the confirm click's quote showed; close() refuses
+    # if the position or the bids have moved past them since
+    try:
+        return await asyncio.to_thread(pm_positions.close, condition_id, outcome, shares, proceeds)
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+
+@hub.get("/api/polymarket/positions")
+async def polymarket_positions():
+    try:
+        return {"ok": True, "rows": await asyncio.to_thread(pm_positions.fetch_blotter)}
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
 
