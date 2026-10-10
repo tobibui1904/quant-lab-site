@@ -62,7 +62,7 @@
       <span data-w="" style="display:inline-block">Welcome</span> <span data-w="" style="display:inline-block">to</span> <span data-w="" style="display:inline-block">the</span> <span data-w="" style="display:inline-block">new</span> <span data-w="" style="display:inline-block">edge</span> <span data-w="" style="display:inline-block">of</span> <span data-w="" style="display:inline-block;color:#3AC493">educational</span> <span data-w="" style="display:inline-block;color:#3AC493">quant</span> <span data-w="" style="display:inline-block;color:#3AC493">trading.</span>
     </h1>
     <div data-ob-rule="" style="width:104px;border-bottom:5px double #1D9E75;transition:opacity .6s,transform .6s"></div>
-    <p data-ob-sub="" style="max-width:560px;text-align:center;font-size:clamp(13px,1.4vw,15.5px);line-height:1.65;color:#93A49B;transition:opacity .7s,transform .7s">Eleven desks. Three learners. One ledge. No black boxes</p>
+    <p data-ob-sub="" style="max-width:560px;text-align:center;font-size:clamp(13px,1.4vw,15.5px);line-height:1.65;color:#93A49B;transition:opacity .7s,transform .7s">Ten desks. Three learners. One ledge. No black boxes</p>
 
     <div style="display:flex;flex-direction:column;align-items:center;gap:14px;min-height:96px;margin-top:4px">
       <button data-ob-ring="" style="display:flex;align-items:center;gap:12px;padding:16px 34px;border-radius:10px;border:1px solid #1D9E75;background:rgba(29,158,117,.08);color:#3AC493;font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;transition:background .25s,color .25s,transform .25s,opacity .35s" style-hover="background:#1D9E75;color:#06130E">
@@ -220,10 +220,10 @@ class Component extends DCLogic {
     if (!tape) return;
     // the lab's own index — no market data to be wrong about
     const items = [
-      ['01', 'Fundamental', ''], ['02', 'Macro Research', ''], ['03', 'OTC Track', ''],
-      ['04', 'Forex Dashboard', ''], ['05', 'LETF Backtest', ''], ['06', 'Crypto', ''],
-      ['07', 'Prediction Markets', ''], ['08', 'Treasury Securities', ''], ['09', 'Pair Trading', ''],
-      ['10', 'Bull Call Spread', 'sealed'], ['11', 'Bear Put Spread', 'sealed'],
+      ['01', 'Fundamental', ''], ['02', 'OTC Track', ''], ['03', 'Forex Dashboard', ''],
+      ['04', 'LETF Backtest', ''], ['05', 'Crypto', ''], ['06', 'Prediction Markets', ''],
+      ['07', 'Treasury Securities', ''], ['08', 'Pair Trading', ''], ['09', 'Bull Call Spread', 'sealed'],
+      ['10', 'Bear Put Spread', 'sealed'],
       ['§', 'No lookahead', 'walk-forward tested'], ['§', 'Beat the baseline', 'not just fifty'], ['§', 'Every caveat printed', 'the ledger is honest']
     ];
     const html = items.map(([num, name, path]) =>
