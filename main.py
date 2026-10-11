@@ -42,14 +42,6 @@ NOTEBOOKS = [
         "path":        "/fundamental",
     },
     {
-        "id":          "macro_research",
-        "label":       "Macro Research",
-        "icon":        "ti-flame",
-        "group":       "Research",
-        "description": "FRED factor models — sector betas under macro stress",
-        "path":        "/macro_research",
-    },
-    {
         "id":          "otc_track",
         "label":       "OTC Track",
         "icon":        "ti-eye-off",
@@ -187,7 +179,6 @@ def suggested_tabs():
 marimo_asgi = (
     marimo.create_asgi_app()
     .with_app(path="/fundamental",        root="desks/equities/fundamental.py")
-    .with_app(path="/macro_research",        root="desks/macro/macro_research.py")
     .with_app(path="/otc_track",          root="desks/otc/OTC_Track.py")
     .with_app(path="/forex",              root="desks/forex/forex.py")
     .with_app(path="/letf",               root="desks/letf/letf.py")
@@ -458,30 +449,52 @@ _HUB_TEMPLATE = """<!DOCTYPE html>
   }
   @media (max-width: 980px) { .acct-row { grid-template-columns: 1fr; } }
   .acct {
-    background: #111814; border: 1px solid var(--border); border-radius: 10px;
-    padding: 16px 18px 14px;
-    display: flex; flex-direction: column; gap: 12px;
+    /* sizes below scale with the card itself, so a narrow (or zoomed)
+       card shrinks its hero instead of clipping its numbers */
+    container-type: inline-size;
+    background: linear-gradient(180deg, #131C17 0%, #0F1612 100%);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px 14px;
+    display: flex; flex-direction: column; gap: 14px;
+    min-width: 0;
   }
   .acct[hidden] { display: none; }
-  .acct-head { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 10px; flex-wrap: wrap; }
-  .acct-name { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--text); white-space: nowrap; }
-  .acct-tag {
-    font-family: var(--mono); font-style: normal; font-size: 9px;
-    letter-spacing: .18em; text-transform: uppercase; color: var(--faint); margin-left: 9px;
+  .acct-head { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
+  .acct-id { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .acct-name { font-family: var(--serif); font-style: italic; font-size: 23px; line-height: 1; color: var(--text); white-space: nowrap; }
+  .acct-kind { font-family: var(--sans); font-size: 13px; color: var(--muted); white-space: nowrap; }
+  /* practice/paper is a safety fact, so it sits in its own badge */
+  .acct-mode {
+    font-family: var(--sans); font-size: 11.5px; font-weight: 500; color: var(--gold);
+    border: 1px solid rgba(201,169,97,.38); background: rgba(201,169,97,.07);
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap;
   }
-  .acct-asof { font-size: 9.5px; letter-spacing: .1em; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .acct-hero { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-  .acct-nav { font-size: 27px; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: .01em; transition: color .5s; }
-  .acct-delta { font-size: 12px; font-variant-numeric: tabular-nums; }
-  .acct-delta .dl {
-    font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--faint); margin-right: 6px;
+  .acct-hero { display: flex; flex-direction: column; gap: 8px; }
+  .acct-nav {
+    font-size: clamp(26px, 10.5cqi, 38px); line-height: 1.05; font-weight: 500;
+    color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+    white-space: nowrap; transition: color .5s;
   }
-  .acct-delta .pos { color: var(--green-hi); }
-  .acct-delta .neg { color: #E07B4F; }
+  .acct-delta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-variant-numeric: tabular-nums; min-height: 24px;
+  }
+  .acct-delta .dl { font-family: var(--sans); font-size: 13px; color: var(--muted); }
+  .acct-delta .chip {
+    font-size: 13.5px; padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+    color: var(--muted); background: rgba(147,164,155,.08);
+  }
+  .acct-delta .chip.pos { color: var(--green-hi); background: rgba(58,196,147,.12); }
+  .acct-delta .chip.neg { color: #EE8A5E; background: rgba(224,123,79,.13); }
 
-  .spark-wrap { position: relative; }
-  .spark { display: block; width: 100%; height: 64px; }
+  .spark-wrap { position: relative; margin: 0 -4px; }
+  .spark { display: block; width: 100%; height: 76px; }
+  .spark-empty {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: var(--sans); font-size: 12.5px; color: var(--faint);
+    border: 1px dashed var(--rule); border-radius: 8px;
+  }
+  .spark-empty[hidden] { display: none; }
   .spark-base { stroke: #3A4A42; stroke-width: 1; stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
   .spark-hair { stroke: #4A5A52; stroke-width: 1; vector-effect: non-scaling-stroke; }
   .spark-draw {
@@ -496,13 +509,27 @@ _HUB_TEMPLATE = """<!DOCTYPE html>
     font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums;
   }
 
+  /* label over value: each figure gets the full half-width, so nothing clips */
   .acct-stats {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px;
-    border-top: 1px solid var(--border); padding-top: 11px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px;
+    border-top: 1px solid var(--rule); padding-top: 14px;
   }
-  .acct-stats > div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .as-label { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
-  .as-val { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; transition: color .5s; }
+  .acct-stats > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .as-label { font-family: var(--sans); font-size: 12px; color: var(--muted); }
+  .as-val {
+    font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere; transition: color .5s;
+  }
+  .acct-foot {
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--sans); font-size: 11.5px; color: var(--faint);
+  }
+  .acct-foot::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green-hi); box-shadow: 0 0 6px rgba(58,196,147,.5);
+  }
+  .acct-foot:empty { display: none; }
+  .acct-foot .t { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
   /* exchange-style tick flash: class lands (instant color), removal fades */
   .tick-up   { color: var(--green-hi) !important; transition: color 0s !important; }
@@ -699,8 +726,8 @@ __NAV__
         <div class="acct-row">
           <section class="acct" id="acct-oanda" hidden>
             <div class="acct-head">
-              <span class="acct-name">OANDA<span class="acct-tag">fx &middot; practice</span></span>
-              <span class="acct-asof" id="ao-asof"></span>
+              <span class="acct-id"><span class="acct-name">OANDA</span><span class="acct-kind">FX</span></span>
+              <span class="acct-mode">Practice</span>
             </div>
             <div class="acct-hero">
               <span class="acct-nav" id="ao-nav">&mdash;</span>
@@ -709,6 +736,7 @@ __NAV__
             <div class="spark-wrap">
               <svg class="spark" id="ao-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg>
               <div class="spark-tip" id="ao-tip" hidden></div>
+              <div class="spark-empty" id="ao-spark-empty" hidden>Equity history appears after a few samples</div>
             </div>
             <div class="acct-stats">
               <div><span class="as-label">Balance</span><span class="as-val" id="ao-balance">&mdash;</span></div>
@@ -716,11 +744,12 @@ __NAV__
               <div><span class="as-label">Margin available</span><span class="as-val" id="ao-mavail">&mdash;</span></div>
               <div><span class="as-label">Open trades</span><span class="as-val" id="ao-trades">&mdash;</span></div>
             </div>
+            <div class="acct-foot" id="ao-asof"></div>
           </section>
           <section class="acct" id="acct-alpaca" hidden>
             <div class="acct-head">
-              <span class="acct-name">Alpaca<span class="acct-tag">equities &middot; paper</span></span>
-              <span class="acct-asof" id="aa-asof"></span>
+              <span class="acct-id"><span class="acct-name">Alpaca</span><span class="acct-kind">Equities</span></span>
+              <span class="acct-mode">Paper</span>
             </div>
             <div class="acct-hero">
               <span class="acct-nav" id="aa-nav">&mdash;</span>
@@ -729,6 +758,7 @@ __NAV__
             <div class="spark-wrap">
               <svg class="spark" id="aa-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg>
               <div class="spark-tip" id="aa-tip" hidden></div>
+              <div class="spark-empty" id="aa-spark-empty" hidden>Equity history appears after a few samples</div>
             </div>
             <div class="acct-stats">
               <div><span class="as-label">Cash</span><span class="as-val" id="aa-cash">&mdash;</span></div>
@@ -736,11 +766,12 @@ __NAV__
               <div><span class="as-label">Market value</span><span class="as-val" id="aa-mv">&mdash;</span></div>
               <div><span class="as-label">Prior close</span><span class="as-val" id="aa-prior">&mdash;</span></div>
             </div>
+            <div class="acct-foot" id="aa-asof"></div>
           </section>
           <section class="acct" id="acct-polymarket" hidden>
             <div class="acct-head">
-              <span class="acct-name">Polymarket<span class="acct-tag">events &middot; paper</span></span>
-              <span class="acct-asof" id="ap-asof"></span>
+              <span class="acct-id"><span class="acct-name">Polymarket</span><span class="acct-kind">Events</span></span>
+              <span class="acct-mode">Paper</span>
             </div>
             <div class="acct-hero">
               <span class="acct-nav" id="ap-nav">&mdash;</span>
@@ -749,6 +780,7 @@ __NAV__
             <div class="spark-wrap">
               <svg class="spark" id="ap-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg>
               <div class="spark-tip" id="ap-tip" hidden></div>
+              <div class="spark-empty" id="ap-spark-empty" hidden>Equity history appears after a few samples</div>
             </div>
             <div class="acct-stats">
               <div><span class="as-label">Cash</span><span class="as-val" id="ap-cash">&mdash;</span></div>
@@ -756,6 +788,7 @@ __NAV__
               <div><span class="as-label">Starting balance</span><span class="as-val" id="ap-start">&mdash;</span></div>
               <div><span class="as-label">Open positions</span><span class="as-val" id="ap-open">&mdash;</span></div>
             </div>
+            <div class="acct-foot" id="ap-asof"></div>
           </section>
         </div>
         <section class="blotter" id="blotter" hidden>
@@ -1333,9 +1366,8 @@ __NAV__
     setVal('ap-nav', total, money(total));
     setVal('ap-pv', pv, money(pv));
     document.getElementById('ap-delta').innerHTML =
-      deltaHtml('total', pnl, 100 * pnl / (pmAcct.starting || 1));
-    document.getElementById('ap-asof').textContent =
-      'as of ' + new Date().toLocaleTimeString('en-US', { hour12: false });
+      deltaHtml('Since start', pnl, 100 * pnl / (pmAcct.starting || 1));
+    stampAsof('ap-asof');
   }
 
   function pmOnMessage(ev) {
@@ -1466,9 +1498,23 @@ __NAV__
     setTimeout(() => el.classList.remove(cls), 180);
   }
 
+  // rounds before classifying so float dust (-1e-11) reads as a flat 0.00,
+  // not a red -0.00; arrows carry the sign for anyone not reading color
   function deltaHtml(label, v, pct) {
-    return '<span class="dl">' + label + '</span><span class="' + plClass(v) + '">'
-      + signed(v, 2) + (pct == null ? '' : ' &middot; ' + signed(pct, 2) + '%') + '</span>';
+    const r = Math.round(v * 100) / 100 || 0;
+    const rp = pct == null ? null : (Math.round(pct * 100) / 100 || 0);
+    const cls = plClass(r);
+    const arrow = r > 0 ? '&#9650; ' : (r < 0 ? '&#9660; ' : '');
+    const abs = x => fmtNum(Math.abs(x), 2);
+    return '<span class="dl">' + label + '</span><span class="chip ' + cls + '">'
+      + arrow + (r < 0 ? '&minus;' : r > 0 ? '+' : '') + abs(r)
+      + (rp == null ? '' : ' (' + (rp < 0 ? '&minus;' : rp > 0 ? '+' : '') + abs(rp) + '%)')
+      + '</span>';
+  }
+
+  function stampAsof(id) {
+    document.getElementById(id).innerHTML = 'Updated <span class="t">'
+      + new Date().toLocaleTimeString('en-US', { hour12: false }) + '</span>';
   }
 
   // Single-series sparkline: colored by polarity vs the baseline (prior
@@ -1477,7 +1523,13 @@ __NAV__
   function drawSpark(id, hist, base) {
     const svg = document.getElementById(id);
     if (!svg) return;
-    if (!hist || hist.length < 2) { svg.innerHTML = ''; delete svg.dataset.hist; return; }
+    const empty = document.getElementById(id + '-empty');
+    if (!hist || hist.length < 2) {
+      svg.innerHTML = ''; delete svg.dataset.hist;
+      if (empty) empty.hidden = false;
+      return;
+    }
+    if (empty) empty.hidden = true;
     const vals = hist.map(p => p[1]);
     let lo = Math.min(...vals), hi = Math.max(...vals);
     if (base != null) { lo = Math.min(lo, base); hi = Math.max(hi, base); }
@@ -1495,8 +1547,11 @@ __NAV__
       (base != null
         ? '<line class="spark-base" x1="0" x2="100" y1="' + Y(base).toFixed(2) + '" y2="' + Y(base).toFixed(2) + '"/>'
         : '')
-      + '<polyline points="' + pts + ' 100,30 0,30" fill="' + col + '" opacity=".08" stroke="none"/>'
-      + '<polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.4" vector-effect="non-scaling-stroke"'
+      + '<defs><linearGradient id="' + id + '-g" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0" stop-color="' + col + '" stop-opacity=".22"/>'
+      + '<stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>'
+      + '<polyline points="' + pts + ' 100,30 0,30" fill="url(#' + id + '-g)" stroke="none"/>'
+      + '<polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.75" vector-effect="non-scaling-stroke"'
       + (first ? ' pathLength="1" class="spark-draw"' : '') + '/>';
   }
 
@@ -1550,16 +1605,15 @@ __NAV__
       }
       sec.hidden = false;
       const a = data.acct;
-      const asof = 'as of ' + new Date().toLocaleTimeString('en-US', { hour12: false });
       if (name === 'oanda') {
         setVal('ao-nav', a.nav, money(a.nav));
         document.getElementById('ao-delta').innerHTML =
-          deltaHtml('unrealized', a.unrealized, 100 * a.unrealized / (a.balance || 1));
+          deltaHtml('Unrealized', a.unrealized, 100 * a.unrealized / (a.balance || 1));
         setVal('ao-balance', a.balance, money(a.balance));
         setVal('ao-mused', a.margin_used, money0(a.margin_used));
         setVal('ao-mavail', a.margin_avail, money0(a.margin_avail));
         setVal('ao-trades', a.open_trades, String(a.open_trades));
-        document.getElementById('ao-asof').textContent = asof;
+        stampAsof('ao-asof');
         drawSpark('ao-spark', data.history, data.base);
       } else if (name === 'polymarket') {
         // no prior close on a prediction book: the delta and the dotted
@@ -1567,24 +1621,24 @@ __NAV__
         pmAcct = a;     // the live feed re-marks the card from this cash
         setVal('ap-nav', a.total, money(a.total));
         document.getElementById('ap-delta').innerHTML =
-          deltaHtml('total', a.pnl, 100 * a.pnl / (a.starting || 1));
+          deltaHtml('Since start', a.pnl, 100 * a.pnl / (a.starting || 1));
         setVal('ap-cash', a.cash, money(a.cash));
         setVal('ap-pv', a.positions_value, money(a.positions_value));
         setVal('ap-start', a.starting, money0(a.starting));
         setVal('ap-open', a.open_positions, String(a.open_positions));
-        document.getElementById('ap-asof').textContent = asof;
+        stampAsof('ap-asof');
         drawSpark('ap-spark', data.history, data.base);
         pmCard();       // keep live marks rather than flip back to the polled snapshot
       } else {
         const day = a.equity - a.last_equity;
         setVal('aa-nav', a.equity, money(a.equity));
         document.getElementById('aa-delta').innerHTML =
-          deltaHtml('today', day, 100 * day / (a.last_equity || 1));
+          deltaHtml('Today', day, 100 * day / (a.last_equity || 1));
         setVal('aa-cash', a.cash, money(a.cash));
         setVal('aa-bp', a.buying_power, money0(a.buying_power));
         setVal('aa-mv', a.long_value, money(a.long_value));
         setVal('aa-prior', a.last_equity, money(a.last_equity));
-        document.getElementById('aa-asof').textContent = asof;
+        stampAsof('aa-asof');
         drawSpark('aa-spark', data.history, data.base);
       }
     } catch (e) {}
