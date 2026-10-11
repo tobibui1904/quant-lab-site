@@ -20,7 +20,7 @@ def _():
     import marimo as mo
     import sys as _sys
 
-    # market_cache is shared with the Macro desk, so it lives in <root>/shared.
+    # market_cache is shared across desks, so it lives in <root>/shared.
     _shared = str(pathlib.Path(mo.notebook_dir()).parents[1] / "shared")
     if _shared not in _sys.path:
         _sys.path.insert(0, _shared)
