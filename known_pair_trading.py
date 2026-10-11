@@ -21,7 +21,7 @@ def _(mo):
         subtitle_html = f"""
           <div style="font-family: 'DM Mono', monospace; font-size: 11px; color: var(--color-text-secondary); letter-spacing: 0.1em; margin-top: 8px;">{subtitle}</div>
         """ if subtitle else ""
-
+    
         return mo.Html(f"""
     <div style="padding: 2rem 0 1.5rem;">
       <div style="display: flex; align-items: flex-start; gap: 16px;">
