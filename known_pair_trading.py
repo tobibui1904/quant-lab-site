@@ -393,95 +393,10 @@ def _(
     plt,
     sector_input,
 ):
+    from pair_screen import FDR_Q, cointegration_checker
+
     # Cointegration Test to find the best pairs — TRAIN WINDOW ONLY.
     Ticker_list = adj_close_train.columns.tolist()
-
-    FDR_Q = 0.05
-
-    def cointegration_checker(stock_dataframe, corr_floor=0.7, fdr_q=FDR_Q):
-        """Engle-Granger cointegration over every pair.
-
-        Beyond a plain double loop this does four things:
-
-        1. Works on a plain float array. `coint` converts its inputs to arrays
-           anyway, so handing it columns of a DataFrame paid for a label lookup
-           plus a Series->array conversion on every call.
-        2. Pre-screens on price correlation. The regression underlying the test
-           only finds a stationary residual when the two series track each
-           other, so pairs below `corr_floor` are near-certain rejects.
-        3. Tests BOTH regression directions and keeps the stronger. Engle-Granger
-           is not symmetric — regressing A on B and B on A give different
-           residuals and different p-values, and only one may be stationary.
-           Previously whichever direction fell out of the column ordering won,
-           which is arbitrary. Taking the better of two looks is itself a
-           multiple comparison, so the winner pays a factor-of-2 Bonferroni
-           penalty before going forward.
-        4. Controls the FALSE DISCOVERY RATE across pairs. This is the one that
-           matters. Screening m pairs at a flat p < 0.02 produces ~0.02*m
-           spurious "cointegrated" pairs by construction: on 100 independent
-           random walks — where the true count is zero — the flat threshold
-           flags ~50 of the 4950 pairs. Benjamini-Hochberg at q=`fdr_q` bounds
-           the expected proportion of false discoveries among those reported.
-
-        Returns pairs as (dependent, independent, p_raw, q_value).
-        """
-        keys = list(stock_dataframe.columns)
-        k = len(keys)
-        values = stock_dataframe.to_numpy(dtype=float)
-        p_values = np.ones((k, k))
-
-        # Constant series break both the ADF regression and the correlation
-        # matrix (zero stddev -> divide-by-zero -> NaN), so drop them up front
-        # and correlate only what is left.
-        varying = np.flatnonzero(values.min(axis=0) != values.max(axis=0))
-        if len(varying) < 2:
-            return p_values, [], (0, 0)
-
-        corr = np.abs(np.corrcoef(values[:, varying], rowvar=False))
-
-        # Indices here are positions within `varying`, mapped back to real
-        # column indices when the pair is recorded.
-        candidates = [
-            (varying[a], varying[b])
-            for a in range(len(varying) - 1)
-            for b in range(a + 1, len(varying))
-            if corr[a, b] >= corr_floor
-        ]
-        if not candidates:
-            return p_values, [], (0, 0)
-
-        # Both orientations of every candidate, in one fan-out. statsmodels'
-        # ADF work sits in NumPy/LAPACK, which drops the GIL, so threads give
-        # real parallelism without pickling the price matrix to workers.
-        jobs = [(i, j) for i, j in candidates] + [(j, i) for i, j in candidates]
-        results = Parallel(n_jobs=-1, prefer='threads')(
-            delayed(coint)(values[:, a], values[:, b]) for a, b in jobs
-        )
-
-        # Winner per unordered pair, with the 2-look Bonferroni penalty.
-        best = {}
-        for (a, b), coint_test in zip(jobs, results):
-            slot = (min(a, b), max(a, b))
-            p = coint_test[1]
-            if slot not in best or p < best[slot][0]:
-                best[slot] = (p, a, b)          # a = dependent, b = independent
-
-        slots = list(best.keys())
-        p_raw = np.array([min(2.0 * best[s][0], 1.0) for s in slots])
-
-        # NOTE: `corr_floor` is data-dependent, so the pairs entering this
-        # correction were themselves chosen by looking at the data. BH over the
-        # tests actually run is therefore an approximation — an optimistic one.
-        reject, q_values, _, _ = multipletests(p_raw, alpha=fdr_q, method='fdr_bh')
-
-        cointegrated_pairs = []
-        for slot, p, rej, q in zip(slots, p_raw, reject, q_values):
-            p_values[slot] = p
-            if rej:
-                _, dep, indep = best[slot]
-                cointegrated_pairs.append((keys[dep], keys[indep], float(p), float(q)))
-
-        return p_values, cointegrated_pairs, (len(slots), int(reject.sum()))
 
     pvalues, raw_pairs, (n_tested, n_signif) = cointegration_checker(adj_close_train)
     fig = Figure(figsize=(25, 10))
@@ -524,65 +439,9 @@ def _(section_header):
 
 @app.cell
 def _(OLS, add_constant, adfuller, adj_close_train, mo, np, pd, raw_pairs):
-    def stock_pair(candidate_pairs):
-        """Keep pairs whose price ratio is ADF-stationary, best p-value first.
+    from pair_screen import stock_pair
 
-        Runs on the TRAIN window only — this is a selection step, and letting it
-        see the test bars is what makes an in-sample backtest look good.
-
-        The result is what the rest of the notebook trades: previously this
-        filter was computed into a local and thrown away, so the selector
-        downstream still offered every cointegrated pair regardless of the
-        ADF outcome.
-        """
-        kept, diagnostics = [], []
-
-        # Ascending: the strongest cointegration (smallest p-value) leads.
-        # Sorting descending put the weakest pair at [0] in the selector.
-        for pair in sorted(candidate_pairs, key=lambda p: p[2]):
-            ticker_1, ticker_2 = pair[1], pair[0]
-            Asset_1 = adj_close_train[ticker_1]
-            Asset_2 = adj_close_train[ticker_2]
-            price_ratio = Asset_1 / Asset_2
-
-            if price_ratio.isin([np.inf, -np.inf]).any():
-                continue
-            if price_ratio.isna().any():
-                continue
-            if price_ratio.max() == price_ratio.min():
-                continue
-
-            result_price_ratio = adfuller(price_ratio, autolag='AIC')
-
-            const = add_constant(Asset_1)
-            results = OLS(Asset_2, const).fit()
-            coef = results.params[ticker_1]
-            spread = Asset_2 - coef * Asset_1
-            result_spread = adfuller(spread, autolag='AIC')  # ← was incorrectly using price_ratio
-
-            ratio_stationary = result_price_ratio[1] <= 0.1
-            spread_stationary = result_spread[1] <= 0.1
-
-            # Selection still turns on the ratio, which is what the rolling
-            # z-score path trades. The hedge-ratio spread ADF is reported
-            # alongside it so a pair that mean-reverts on one construction but
-            # not the other is visible rather than silently accepted.
-            if ratio_stationary:
-                kept.append(pair)
-                diagnostics.append({
-                    'Dependent': ticker_2,
-                    'Independent': ticker_1,
-                    'Coint p': f'{pair[2]:.4g}',
-                    'FDR q': f'{pair[3]:.4g}',
-                    'Ratio ADF p': f'{result_price_ratio[1]:.4f}',
-                    'Spread ADF p': f'{result_spread[1]:.4f}',
-                    'Spread stationary': '✓' if spread_stationary else '—',
-                })
-
-        return kept, pd.DataFrame(diagnostics)
-
-
-    pairs, pair_diagnostics = stock_pair(raw_pairs)
+    pairs, pair_diagnostics = stock_pair(raw_pairs, adj_close_train)
     mo.stop(
         len(pairs) == 0,
         mo.md(
@@ -634,7 +493,14 @@ def _(
     if _hidden:
         _notes.append(f"- Hidden, a leg is not shortable on Alpaca today "
                       f"({', '.join(sorted(unshortable))}): {', '.join(_hidden)}")
-    mo.callout(mo.md('\n\n'.join(['**Pair registry synced with Alpaca.**', *_notes])), kind='info')
+    if pair_registry['orphans']:
+        # One leg of a pair closed by hand (Alpaca dashboard) leaves the other
+        # unhedged: an outright bet with no signal behind it. Close it or
+        # re-pair it; the desk will not trade around it.
+        _notes.append(f"- **Orphan legs still held, unhedged: "
+                      f"{', '.join(pair_registry['orphans'])}.** Close them on Alpaca.")
+    mo.callout(mo.md('\n\n'.join(['**Pair registry synced with Alpaca.**', *_notes])),
+               kind='warn' if pair_registry['orphans'] else 'info')
     return pair_registry, unshortable
 
 
@@ -1329,67 +1195,7 @@ def _(page_header):
 @app.cell
 def _(np):
     # Kalman Filter for Pair Trading: avoid Moving Average and have better estimate of z_score
-    class MyKalmanFilter:
-        def __init__(self, delta=1e-4, R=1e-3, P0=1e4):
-            # measurement noise variance
-            self.R = R
-
-            # co-variance of process noise(2 dimensions)
-            self.Q = delta / (1-delta) * np.eye(2)
-
-            # state (slope, intercept) history as a list of (2 x 1) columns.
-            # Appending to a list is O(1); re-concatenating an array every step
-            # (the old approach) was O(n^2) over the whole series.
-            self._states = [np.zeros((2, 1))]
-
-            # State covariance, initialised diffuse (large) rather than zero.
-            # Starting at zero claims total confidence in the [0, 0] seed, so
-            # the innovation variance S stays small while the residual is the
-            # full price level — the first standardized residuals came out in
-            # the tens and tripped the entry threshold on bar 0. A diffuse
-            # prior says "the seed is meaningless", which keeps the early
-            # z-scores near zero and lets the filter converge in a few steps.
-            self.P = P0 * np.eye(2)
-
-        @property
-        def x(self):
-            # Materialize the full (2 x n) state history on demand for plotting.
-            return np.concatenate(self._states, axis=1)
-
-        def step_forward(self, y1, y2):
-            # Before entering the equations, let's define H as (1, 2) matrix
-            H = np.array([y2, 1])[None]
-            # and define z
-            z = y1
-
-            ## TIME UPDATE ##
-            # first thing is to predict new state as the previous one (2x1)
-            x_hat = self._states[-1]
-
-            # then, the uncertainty or covariance prediction
-            P_hat = self.P + self.Q
-
-            ## MEASUREMENT UPDATE ##
-            # innovation (residual) variance S = H P_hat H^T + R  (1x1 scalar).
-            # This is the conditional variance of the spread; sqrt(S) is the
-            # natural scale for standardizing the residual into a z-score.
-            S = H.dot(P_hat.dot(H.T)) + self.R
-
-            # calc the Kalman gain
-            K = P_hat.dot(H.T) / S
-
-            # state update part 1 (measurement estimation)
-            z_hat = H.dot(x_hat)
-            # state update part 2
-            x = x_hat + K.dot(z-z_hat)
-
-            # uncertainty update
-            self.P = (np.eye(2)-K.dot(H)).dot(P_hat)
-
-            # append the new state to the history (O(1))
-            self._states.append(x)
-
-            return x, P_hat, K, z_hat, S
+    from pair_screen import MyKalmanFilter
 
     return (MyKalmanFilter,)
 
@@ -1433,260 +1239,34 @@ def _(
     CAPITAL_FRACTION = 0.1   # share of the pair's weighted buying power at risk
 
     def trading_simulation(Asset1, Asset2, window1, window2, stop_loss_pct, Kalman_Filter):
-        """Kalman entries confirmed by causal, two-leg Prophet forecasts.
-
-        Accounting uses actual closes only and reports gross realised P&L.
-        The forecast cost allowance is an entry hurdle, not a deducted fee.
-        Close-price execution is an approximation; no intrabar fills are modeled.
-        """
-        price_ratio = Asset1 / Asset2
-        moving_average1 = price_ratio.rolling(window=window1).mean()
-        moving_average2 = price_ratio.rolling(window=window2).mean()
-        std = price_ratio.rolling(window=window2).std()
-        z_score = (moving_average1 - moving_average2) / std
-
-        # Align the signal to the price index by LABEL. `series` is built from
-        # its own dropna'd frame, so the old positional reset_index paired
-        # signal row N with price row N and would silently misalign the two the
-        # moment their lengths diverged.
-        if Kalman_Filter:
-            signal = series.reindex(Asset1.index)
-        else:
-            signal = z_score
-
-        profit, profit_high, profit_low = (0, 0, 0)
-        ratio_high_sell, ratio_high_buy, ratio_low_buy, ratio_low_sell = (0, 0, 0, 0)
-        low_trade_total, high_trade_total = (0, 0)
-        high_hit_rate, low_hit_rate = ([], [])
-        low_dic, high_dic = ({}, {})
-        Asset1_shares, Asset2_shares = (0, 0)
-        open_trade = 0
-        # Kept (without any cost attached) because the proportional stop-loss
-        # is expressed as a percentage of the notional actually put on.
-        entry_notional = 0.0
-        # Total dollars crossed, entry + exit. No cost is charged against it —
-        # it only lets the summary report how much friction the result could
-        # absorb before it breaks even, which is the number that tells you
-        # whether a frictionless edge would survive real execution.
-        _traded_notional = 0.0
-        current_trade_type = None
-        stopped_out = False
-        stop_loss_exits = 0
-        # Collect log rows in a list and build the DataFrame once after the loop.
-        # Re-concatenating a DataFrame per trade (the old approach) was O(n^2).
-        log_rows = []
-        forecast_rows = []
-
-        # Sizing budget: one capital pool for the pair.
+        """Kalman entries confirmed by causal, two-leg Prophet forecasts (pair_screen.simulate)."""
+        from pair_screen import simulate
         bp = float(account.buying_power)
         weight_1 = float(latest_portfolio_df[pairs[index][1]].iloc[0])
         weight_2 = float(latest_portfolio_df[pairs[index][0]].iloc[0])
         pair_capital = (weight_1 + weight_2) * bp * CAPITAL_FRACTION
-        leg_notional = pair_capital / 2
-
-        # The hedge has to match the spread the SIGNAL trades, otherwise the
-        # position is exposed to moves the signal never claimed to predict:
-        #   ratio path  : trades A1/A2, which is neutral to equal % moves
-        #                 -> equal notional per leg
-        #   Kalman path : trades A2 - beta*A1 in levels
-        #                 -> beta shares of A1 per share of A2
-        # These coincide only when the cointegrating intercept is ~0; with a
-        # large intercept the equal-notional hedge drifts materially (a 34%
-        # under-hedge on a pair with alpha=100 on a $316 stock).
-        betas = (
-            hedge_ratio_series.reindex(Asset1.index).to_numpy(dtype=float)
-            if Kalman_Filter else None
-        )
-
-        # Pull the loop off pandas: .iloc on every bar dominated the runtime.
-        dates = Asset1.index
-        px1 = Asset1.to_numpy(dtype=float)
-        px2 = Asset2.to_numpy(dtype=float)
-        sig = signal.to_numpy(dtype=float)
-
-        for _i in range(len(dates)):
-            date = dates[_i]
-            p1, p2 = px1[_i], px2[_i]
-            kalman_val = sig[_i]
-            # NaN over the rolling / Kalman warm-up. No signal means no entry,
-            # but an already-open position still has to be risk-checked below.
-            has_signal = np.isfinite(kalman_val)
-
-            # A stop-out means the spread kept diverging. Re-arming on the very
-            # next bar just re-opens the same losing position — the stop has to
-            # wait for the spread to actually normalise before trading it again.
-            if stopped_out and has_signal and abs(kalman_val) < 0.5:
-                stopped_out = False
-
-            # --- Entry Logic ---
-            if open_trade == 0 and not stopped_out and has_signal and abs(kalman_val) > 1.25:
-                # Whole shares — a fractional quantity is not executable on the
-                # GTC orders this log later feeds.
-                if betas is not None and np.isfinite(betas[_i]) and betas[_i] > 0:
-                    # Hedge-consistent: shares in beta:1, scaled to the budget.
-                    _q = pair_capital / (betas[_i] * p1 + p2)
-                    Asset2_shares = int(_q)
-                    Asset1_shares = int(betas[_i] * _q)
-                else:
-                    # Equal notional per leg (ratio-spread hedge).
-                    Asset1_shares = int(leg_notional // p1)
-                    Asset2_shares = int(leg_notional // p2)
-
-                # Too little capital to hold both legs; a one-legged "pair"
-                # trade is just an outright directional bet.
-                if Asset1_shares > 0 and Asset2_shares > 0:
-                    # Synchronous, causal confirmation BEFORE changing position
-                    # state. A veto cannot leave a phantom position/exit behind.
-                    _forecast = entry_filter.evaluate(
-                        date, p1, p2, Asset1_shares, Asset2_shares, kalman_val
-                    )
-                    forecast_rows.append(_forecast)
-                    if not _forecast['allowed']:
-                        continue
-                    entry_notional = p1 * Asset1_shares + p2 * Asset2_shares
-                    _traded_notional += entry_notional
-                    open_trade = 1
-
-                    if kalman_val > 1.25:
-                        ratio_high_sell = p1 * Asset1_shares
-                        ratio_high_buy = p2 * Asset2_shares
-                        high_trade_total += 1
-                        current_trade_type = 'high'
-                        log_rows.extend([
-                            {'Date': date, 'Asset': pairs[index][1], 'Action': 'Sell', 'Price': p1, 'Quantity': Asset1_shares, 'Trade_Type': 'High'},
-                            {'Date': date, 'Asset': pairs[index][0], 'Action': 'Buy',  'Price': p2, 'Quantity': Asset2_shares, 'Trade_Type': 'High'}
-                        ])
-                    else:
-                        ratio_low_buy  = p1 * Asset1_shares
-                        ratio_low_sell = p2 * Asset2_shares
-                        low_trade_total += 1
-                        current_trade_type = 'low'
-                        log_rows.extend([
-                            {'Date': date, 'Asset': pairs[index][1], 'Action': 'Buy',  'Price': p1, 'Quantity': Asset1_shares, 'Trade_Type': 'Low'},
-                            {'Date': date, 'Asset': pairs[index][0], 'Action': 'Sell', 'Price': p2, 'Quantity': Asset2_shares, 'Trade_Type': 'Low'}
-                        ])
-
-            # --- Exit Logic ---
-            # Bug 4 Fix: only enter exit block when trade is open
-            elif open_trade == 1:
-                # Mark-to-market of the *active* side only. The old code scaled
-                # every term by count_high / count_low, which — because entries
-                # are gated on open_trade == 0 and the counters reset on close —
-                # were always exactly 1 while a position was open.
-                if current_trade_type == 'high':
-                    open_pnl = (ratio_high_sell - p1 * Asset1_shares) + \
-                               (p2 * Asset2_shares - ratio_high_buy)
-                else:
-                    open_pnl = (p1 * Asset1_shares - ratio_low_buy) + \
-                               (ratio_low_sell - p2 * Asset2_shares)
-
-                # Stop as a FRACTION of the notional actually put on. An absolute
-                # dollar stop is not scale-free: the same $5,000 is a hard stop
-                # on a small account and unreachable on a large one, because
-                # position size scales with buying power.
-                stop_loss_hit = open_pnl < -(stop_loss_pct / 100.0) * entry_notional
-
-                # Close the trade on a stop-loss hit OR a normal mean-reversion
-                # exit. Both cases run identical accounting, so they share one block.
-                if stop_loss_hit or (has_signal and abs(kalman_val) < 0.5):
-                    realised = open_pnl
-                    _traded_notional += p1 * Asset1_shares + p2 * Asset2_shares
-                    if stop_loss_hit:
-                        stopped_out = True
-                        stop_loss_exits += 1
-
-                    if current_trade_type == 'high':
-                        profit_high += realised
-                        high_hit_rate.append(realised)
-                        high_dic[date.strftime('%Y-%m-%d')] = realised
-                        # Bug 2 Fix: correct closing actions for high trade
-                        log_rows.extend([
-                            {'Date': date, 'Asset': pairs[index][1], 'Action': 'Buy',  'Price': p1, 'Quantity': Asset1_shares, 'Trade_Type': 'Close'},
-                            {'Date': date, 'Asset': pairs[index][0], 'Action': 'Sell', 'Price': p2, 'Quantity': Asset2_shares, 'Trade_Type': 'Close'}
-                        ])
-                    else:
-                        profit_low += realised
-                        low_hit_rate.append(realised)
-                        low_dic[date.strftime('%Y-%m-%d')] = realised
-                        # Bug 2 Fix: correct closing actions for low trade
-                        log_rows.extend([
-                            {'Date': date, 'Asset': pairs[index][1], 'Action': 'Sell', 'Price': p1, 'Quantity': Asset1_shares, 'Trade_Type': 'Close'},
-                            {'Date': date, 'Asset': pairs[index][0], 'Action': 'Buy',  'Price': p2, 'Quantity': Asset2_shares, 'Trade_Type': 'Close'}
-                        ])
-
-                    ratio_high_sell, ratio_high_buy, ratio_low_buy, ratio_low_sell = (0, 0, 0, 0)
-                    open_trade = 0
-                    entry_notional = 0.0
-                    current_trade_type = None
-
-        # Build the trade log once from the collected rows (single concat).
-        trading_log = pd.DataFrame(
-            log_rows,
-            columns=['Date', 'Asset', 'Action', 'Price', 'Quantity', 'Trade_Type'],
-        )
-
-        # --- Summary Stats ---
-        profit = profit_low + profit_high
-
-        # Clamp at 0: with no losing trades, min() is the SMALLEST GAIN, and
-        # abs() was reporting that profit as if it were the biggest loss.
-        high_biggest_loss = abs(min(min(high_hit_rate), 0.0)) if high_hit_rate else 0
-        high_biggest_gain = max(max(high_hit_rate), 0.0) if high_hit_rate else 0
-        low_biggest_loss  = abs(min(min(low_hit_rate), 0.0)) if low_hit_rate else 0
-        low_biggest_gain  = max(max(low_hit_rate), 0.0) if low_hit_rate else 0
-
-        high_hit_rate_pct = len([x for x in high_hit_rate if x > 0]) / len(high_hit_rate) * 100 if high_hit_rate else 0
-        low_hit_rate_pct  = len([x for x in low_hit_rate  if x > 0]) / len(low_hit_rate)  * 100 if low_hit_rate  else 0
-
-        # --- at the end of the function, replace the mo.vstack block ---
+        r = simulate(Asset1, Asset2, window1, window2, stop_loss_pct, Kalman_Filter,
+                     signal=series, betas=hedge_ratio_series, pair_capital=pair_capital,
+                     asset1_name=pairs[index][1], asset2_name=pairs[index][0], entry_filter=entry_filter)
+        s = r['summary']
         summary_ui = mo.vstack([
-            mo.callout(
-                mo.md(
-                    f"**Kalman + Prophet gross profit (out-of-sample)** from "
-                    f"`{Asset1.index[0].strftime('%Y-%m-%d')}` to "
-                    f"`{Asset1.index[-1].strftime('%Y-%m-%d')}`: **${profit:,.2f}**  \n"
-                    f"*Return on ${pair_capital:,.0f} deployed: "
-                    f"{profit / pair_capital:+.2%} over "
-                    f"{high_trade_total + low_trade_total} trades. "
-                    f"Stop-loss exits: {stop_loss_exits}.*  \n"
-                    f"*The pair was selected on the train window only — these "
-                    f"bars were never used to choose it.*  \n"
-                    f"*Prophet is fitted only through each entry decision date. "
-                    f"Costs and the forecast buffer gate entries; reported P&L "
-                    f"remains gross, using actual closes. Breakeven friction: "
-                    f"{profit / max(_traded_notional, 1e-9) * 1e4:,.0f} bps "
-                    f"round-trip across ${_traded_notional:,.0f} traded.*"
-                ),
-                kind="success" if profit > 0 else "danger"
-            ),
+            mo.callout(mo.md(
+                f"**Kalman + Prophet gross profit (out-of-sample)** from `{s['start']}` to `{s['end']}`: "
+                f"**${s['profit']:,.2f}**  \n*Return on ${s['pair_capital']:,.0f} deployed: "
+                f"{s['profit'] / s['pair_capital']:+.2%} over {s['trades']} trades. "
+                f"Stop-loss exits: {s['stop_loss_exits']}.*  \n"
+                f"*The pair was selected on the train window only — these bars were never used to choose it.*  \n"
+                f"*Prophet is fitted only through each entry decision date. Costs and the forecast buffer gate "
+                f"entries; reported P&L remains gross, using actual closes. Breakeven friction: "
+                f"{s['breakeven_bps']:,.0f} bps round-trip across ${s['traded_notional']:,.0f} traded.*"),
+                kind="success" if s['profit'] > 0 else "danger"),
             mo.ui.table(pd.DataFrame([
-                {"Trade Type": "High Ratio Trades", "Total Trades": high_trade_total, "Hit Rate (%)": f"{high_hit_rate_pct:.2f}", "Biggest Gain ($)": f"{high_biggest_gain:.2f}", "Biggest Loss ($)": f"{high_biggest_loss:.2f}"},
-                {"Trade Type": "Low Ratio Trades",  "Total Trades": low_trade_total,  "Hit Rate (%)": f"{low_hit_rate_pct:.2f}",  "Biggest Gain ($)": f"{low_biggest_gain:.2f}",  "Biggest Loss ($)": f"{low_biggest_loss:.2f}"},
-            ]))
+                {"Trade Type": "High Ratio Trades", "Total Trades": s['high']['total'], "Hit Rate (%)": f"{s['high']['hit_rate']:.2f}", "Biggest Gain ($)": f"{s['high']['gain']:.2f}", "Biggest Loss ($)": f"{s['high']['loss']:.2f}"},
+                {"Trade Type": "Low Ratio Trades",  "Total Trades": s['low']['total'],  "Hit Rate (%)": f"{s['low']['hit_rate']:.2f}",  "Biggest Gain ($)": f"{s['low']['gain']:.2f}",  "Biggest Loss ($)": f"{s['low']['loss']:.2f}"},
+            ])),
         ])
-
-
-        trades_dic = {**high_dic, **low_dic}
-        # Base the curve on the capital actually DEPLOYED, not the whole
-        # weighted buying power. Only `pair_capital` is ever at risk, so
-        # dividing P&L by the full pool understated return on capital 10x.
-        # (Realised-at-close only — there is no mark-to-market between trades,
-        # so drawdown inside an open position is not visible here.)
-        total = pair_capital
-        tracker = []
-        for key in sorted(trades_dic.keys()):
-            total += trades_dic[key]
-            tracker.append(total)
-
-        trades = pd.DataFrame({'Date': list(trades_dic.keys()), 'Profit': list(trades_dic.values())})
-        growth_tracker = pd.DataFrame({
-            'Date': sorted(trades_dic.keys()),
-            'Cumulative Value': tracker
-        }).set_index('Date')
-
-        return (('High Trades', high_dic), ('Low Trades', low_dic), growth_tracker,
-                ('Total Profit:', profit), trades, trading_log, summary_ui,
-                pd.DataFrame(forecast_rows))
+        return (('High Trades', r['high']), ('Low Trades', r['low']), r['growth'],
+                ('Total Profit:', r['profit']), r['trades'], r['log'], summary_ui, r['forecasts'])
 
     return (trading_simulation,)
 
@@ -2158,13 +1738,15 @@ def _(
     mo.stop(not save_btn.value)
 
     # Broker-position exits have already been checked, before Prophet fitting.
-    # Any buy/sell rows the replay logs for today are traded when Alpaca is flat
-    # on the pair (user's choice): entries, and also Close rows, which from a
-    # flat account open that position; the exit check manages it afterwards.
+    # Only today's entry rows (High/Low) are traded, and only when Alpaca is
+    # flat on the pair. Close rows are exits: placing them from a flat account
+    # (the 2026-09-29 rule) opened the reverse position at |z| < 0.5, which the
+    # next exit check closed a bar later; out of sample that was a coin flip
+    # that paid the spread (-0.09% per trade at 5 bps, study 2026-10-14).
     signal_date = pd.Timestamp(result.index[-1]).date()
     _dates = pd.to_datetime(trade_log['Date'])
     _entries = trade_log[
-        (_dates.dt.date == signal_date) & trade_log['Trade_Type'].isin(['High', 'Low', 'Close'])
+        (_dates.dt.date == signal_date) & trade_log['Trade_Type'].isin(['High', 'Low'])
     ]
     if pair_risk['entry_allowed']:
         pair_exec = submit_pair_entries(
