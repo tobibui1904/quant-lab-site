@@ -875,15 +875,23 @@ def _(resolve_button, set_resolve_clicked):
 
 
 @app.cell
-def _(Path, get_resolve_clicked, mo, needs_resolution_df, os, pd):
-    from forex_resolution import COLUMNS, ClefFlashResolver
+def _(get_resolve_clicked, mo, needs_resolution_df, os, pd):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _shared = str(_Path(__file__).resolve().parents[2] / "shared")
+    if _shared not in _sys.path:
+        _sys.path.insert(0, _shared)
+    from forex_resolution import COLUMNS, ClefFlashResolver, R2Ledger
+    import market_cache
 
+    # The Neuron ledger and decision cache live on R2 (one JSON object per UTC day); nothing is written locally.
+    _account = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
     _resolver = ClefFlashResolver(
-        account_id=os.getenv("CLOUDFLARE_ACCOUNT_ID", ""),
+        account_id=_account,
         token=os.getenv("CLOUDFLARE_AUTH_TOKEN", ""),
         workers_plan=os.getenv("CLOUDFLARE_WORKERS_PLAN", "free").strip().lower(),
         daily_neurons=os.getenv("CLEF_DAILY_NEURON_LIMIT", "9000"),
-        ledger_path=Path(__file__).resolve().parents[2] / "data" / "forex-clef-usage.sqlite3",
+        ledger=R2Ledger(market_cache.R2Store.from_env(), account=_account or "unconfigured"),
     )
     if get_resolve_clicked() and len(needs_resolution_df):
         _results = [_resolver.resolve(_row) for _, _row in needs_resolution_df.iterrows()]
