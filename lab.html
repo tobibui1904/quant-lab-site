@@ -59,9 +59,9 @@
           <span style="width:44px;height:1px;background:#26332C"></span>
           <span>Est. 2023 · Raleigh, NC</span>
         </div>
-        <h1 style="font-family:'DM Serif Display',Georgia,serif;font-style:italic;font-weight:400;font-size:clamp(52px,9.5vw,126px);line-height:.94;letter-spacing:-.025em;color:#E9EEEB;margin:20px 0 0;text-wrap:balance">Ten desks,<br>one ledger.</h1>
+        <h1 style="font-family:'DM Serif Display',Georgia,serif;font-style:italic;font-weight:400;font-size:clamp(52px,9.5vw,126px);line-height:.94;letter-spacing:-.025em;color:#E9EEEB;margin:20px 0 0;text-wrap:balance">Eleven desks,<br>one ledger.</h1>
         <div style="width:104px;margin:26px 0 22px;border-bottom:5px double #1D9E75"></div>
-        <p style="max-width:600px;font-size:clamp(15px,1.5vw,18px);line-height:1.62;color:#93A49B;text-wrap:pretty">A research and execution stack built by <strong style="color:#E9EEEB;font-weight:500">Tobi Bui</strong> — ten marimo notebooks covering fundamentals, forex, crypto, treasuries and options spreads, served as one FastAPI application. Live capital runs through OANDA and Alpaca. The models are honest about what they can and cannot predict.</p>
+        <p style="max-width:600px;font-size:clamp(15px,1.5vw,18px);line-height:1.62;color:#93A49B;text-wrap:pretty">A research and execution stack built by <strong style="color:#E9EEEB;font-weight:500">Tobi Bui</strong> — eleven marimo notebooks covering equity fundamentals, pair trading, leveraged ETFs, forex, prediction markets, Treasuries and precious-metal ETFs, plus an automation tab that walks the equity chain on its own, served as one FastAPI application. Orders go to paper and practice accounts on Alpaca and OANDA and to a simulated Polymarket book. Every page prints what its model cannot do.</p>
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:34px">
           <a data-hub-link data-hub-state="closed" style="display:flex;align-items:center;gap:10px;padding:14px 26px;border-radius:9px;background:#1D9E75;color:#06130E;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;box-shadow:0 14px 40px -14px rgba(29,158,117,.7)" style-hover="background:#3AC493;color:#06130E"><i class="ti ti-player-play" style="font-size:15px"></i>Enter the Operation</a>
           <a href="https://github.com/tobibui1904/quant-lab-site" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:9px;border:1px solid #26332C;color:#93A49B;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase" style-hover="border-color:#1D9E75;color:#E9EEEB"><i class="ti ti-brand-github" style="font-size:15px"></i>View source</a>
@@ -77,12 +77,12 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div style="padding:15px 16px;background:rgba(17,24,20,.7);border:1px solid #1F2A24;border-radius:10px;backdrop-filter:blur(6px)">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Notebooks</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:30px;color:#E9EEEB;line-height:1.1;margin-top:6px">10</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:30px;color:#E9EEEB;line-height:1.1;margin-top:6px">11</div>
           </div>
           <div style="padding:15px 16px;background:rgba(17,24,20,.7);border:1px solid #1F2A24;border-radius:10px;backdrop-filter:blur(6px)">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Live venues</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:30px;color:#E9EEEB;line-height:1.1;margin-top:6px">2</div>
-            <div style="font-family:'DM Mono',monospace;font-size:9.5px;color:#5F6F66;margin-top:3px">OANDA · Alpaca</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Paper venues</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:30px;color:#E9EEEB;line-height:1.1;margin-top:6px">3</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9.5px;color:#5F6F66;margin-top:3px">Alpaca · OANDA · Polymarket</div>
           </div>
         </div>
       </div>
@@ -99,12 +99,12 @@
       <div>
         <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 01 — The stack</div>
         <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 18px">Four sheets,<br>bound together.</h2>
-        <p style="max-width:460px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Market data enters at the bottom. Each notebook is a self-contained research sheet. <code style="font-family:'DM Mono',monospace;color:#C9D2CD;background:#131B16;padding:2px 6px;border-radius:5px;font-size:13.5px">One central hub</code> binds all of them into a single ASGI application, and the browser sees one hub with one port.</p>
+        <p style="max-width:460px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Market data enters at the bottom and is cached in a private Cloudflare R2 bucket. Each notebook is a self-contained research sheet. <code style="font-family:'DM Mono',monospace;color:#C9D2CD;background:#131B16;padding:2px 6px;border-radius:5px;font-size:13.5px">One central hub</code> binds all of them into a single ASGI application, and the browser sees one hub with one port.</p>
         <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px;font-family:'DM Mono',monospace;font-size:12px;color:#93A49B">
           <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">04</span><span style="width:9px;height:9px;border:1px solid #3AC493;border-radius:2px"></span>Browser shell — sidebar, blotters, iframes</div>
           <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">03</span><span style="width:9px;height:9px;border:1px solid #1D9E75;border-radius:2px"></span>FastAPI hub — routes, gating, /api</div>
-          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">02</span><span style="width:9px;height:9px;border:1px solid #C9A961;border-radius:2px"></span>marimo notebooks — 10 reactive desks</div>
-          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">01</span><span style="width:9px;height:9px;border:1px solid #5F6F66;border-radius:2px"></span>Data — FRED, SEC EDGAR, OANDA, Alpaca, FedInvest</div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">02</span><span style="width:9px;height:9px;border:1px solid #C9A961;border-radius:2px"></span>marimo notebooks — 11 reactive desks</div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="color:#5F6F66;font-size:10px">01</span><span style="width:9px;height:9px;border:1px solid #5F6F66;border-radius:2px"></span>Data — FRED, SEC EDGAR, FINRA, FedInvest, Alpaca, OANDA, Polymarket</div>
         </div>
       </div>
 
@@ -115,15 +115,22 @@
             <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
               <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">FRED</span>
               <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">EDGAR</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">FINRA</span>
               <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">FedInvest</span>
-              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">OANDA</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">TreasuryDirect</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">BLS</span>
               <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">Alpaca</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">OANDA</span>
               <span style="font-family:'DM Mono',monospace;font-size:10px;color:#93A49B;border:1px solid #223029;border-radius:5px;padding:5px 6px;text-align:center">Polymarket</span>
             </div>
           </div>
           <div data-ql-sheet="1" style="position:absolute;inset:0;transform-style:preserve-3d;border:1px solid #3A4A42;border-radius:14px;background:linear-gradient(140deg,#1A2620,#111814);box-shadow:0 30px 60px -30px rgba(0,0,0,.9);padding:18px 22px">
             <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#C9A961">02 · marimo notebooks</div>
             <div style="margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
+              <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
               <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
               <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
               <span style="height:26px;border:1px solid #2C3B33;border-radius:4px;background:rgba(201,169,97,.07)"></span>
@@ -138,7 +145,7 @@
             <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#3AC493">03 · FastAPI hub — main.py</div>
             <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:11px;color:#93A49B;line-height:1.9">
               <div>hub.mount("/", marimo_asgi)</div>
-              <div>GET /api/status · /api/pair-hash</div>
+              <div>GET /api/status · /api/otc-ready</div>
               <div>GET /api/{venue}/account · /positions</div>
             </div>
           </div>
@@ -169,9 +176,9 @@
       <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
         <div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 02 — The desks</div>
-          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 0">Ten notebooks, three books.</h2>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 0">Eleven notebooks, one chain.</h2>
         </div>
-        <p style="max-width:380px;font-size:14.5px;line-height:1.6;color:#5F6F66">Ordering follows the ledger index in the sidebar. Two spread desks stay sealed until the fundamental verdict names them.</p>
+        <p style="max-width:380px;font-size:14.5px;line-height:1.6;color:#5F6F66">Ordering follows the ledger index in the hub sidebar. OTC Track and the two spread desks stay sealed until an upstream desk has done its work. Every venue is a paper or practice account.</p>
       </div>
 
       <div style="margin-top:44px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Research</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
@@ -179,14 +186,14 @@
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
           <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-building-bank" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">01</span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Fundamental</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Filings, ratios &amp; the option-strategy verdict for the active pair.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">The last twenty 10-Q filings from SEC EDGAR XBRL, liquidity, margin, leverage and cash-flow ratios computed in code rather than by the model, and an LLM-written option-strategy verdict for each leg of the active pair.</p>
           <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
         </article>
-        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
-          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-eye-off" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">02</span></div>
-          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">OTC Track</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Off-exchange tape — short volume, dark pools &amp; short interest.</p>
-          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#0F1512;border:1px solid #2A2417;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-eye-off" style="font-size:22px;color:#C9A961"></i><span style="display:flex;align-items:center;gap:7px"><i class="ti ti-lock" style="font-size:12px;color:#C9A961"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">02</span></span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#C9D2CD">OTC Track</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#7A8A81">FINRA off-exchange tape for the watchlist: the ten-day short-volume ratio, eight weeks of ATS (dark-pool) prints, and short interest with days to cover.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#C9A961">Sealed · opens once a pair or ETF triple is armed</div>
         </article>
       </div>
 
@@ -195,31 +202,37 @@
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
           <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-currency-dollar" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">03</span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Forex Dashboard</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">FX pairs ML ensemble, executed through OANDA.</p>
-          <div style="margin-top:14px;display:flex;align-items:center;gap:10px"></div>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Up to 19 OANDA pairs. A third-party transformer forecast and a FinBERT news score, with disagreements arbitrated by Clef-omni; quarter-Kelly sizing on a practice account.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
         </article>
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
           <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-chart-candle" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">04</span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">LETF Backtest</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">3X leveraged-ETF hedges — overlays, backtested.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Twelve leveraged-ETF triples. A three-regime switcher (bull, bear and sideways sleeves) scaled to a 20% volatility target, backtested on daily bars since 2020.</p>
           <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
         </article>
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
-          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-coins" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">05</span></div>
-          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Crypto</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">MAPPO-LSTM agents trading crypto pairs on Alpaca.</p>
-          <div style="margin-top:14px;display:flex;align-items:center;gap:10px"><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></span></div>
-        </article>
-        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
-          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-crystal-ball" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">06</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-crystal-ball" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">05</span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Prediction Markets</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Polymarket desk driven by an LLM broker.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">A chat broker over live Polymarket prices and order books. Fills are simulated, and a position pays out only once its market is resolved.</p>
           <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
         </article>
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
-          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-certificate" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">07</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-certificate" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">06</span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Treasury Securities</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Bills, Notes, Bonds, TIPS, FRNs &amp; STRIPS — curves fitted with rateslib.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">FedInvest closes fitted with rateslib: bill, nominal and TIPS real curves. Each quote&#39;s residual in yield basis points, breakevens, and the STRIPS tape.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-arrows-exchange" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">07</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Treasury ETF Rotation</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">The cheapest fund per maturity bucket, scored as the holdings-weighted curve residual of what it owns. Long-only; a switch needs persistence and a minimum hold.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
+        </article>
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-diamond" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">08</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Precious Metal ETF</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Forecast-only. Ridge regression for the next session&#39;s return and a structured SDE for its variance across twelve metal and mining ETFs, scored every session.</p>
           <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
         </article>
       </div>
@@ -227,107 +240,117 @@
       <div style="margin-top:34px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Strategies</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
       <div style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px;perspective:1200px">
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
-          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-wallet" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">08</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-wallet" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">09</span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Pair Trading</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Cointegration screens &amp; live spread execution.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Engle–Granger screen with false-discovery control, a Kalman hedge ratio and a flat Prophet entry veto. Enter 1.25 &lt; |z| ≤ 2.5, exit |z| &lt; 0.5.</p>
           <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
         </article>
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#0F1512;border:1px solid #2A2417;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
-          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-trending-up" style="font-size:22px;color:#C9A961"></i><span style="display:flex;align-items:center;gap:7px"><i class="ti ti-lock" style="font-size:12px;color:#C9A961"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">09</span></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-trending-up" style="font-size:22px;color:#C9A961"></i><span style="display:flex;align-items:center;gap:7px"><i class="ti ti-lock" style="font-size:12px;color:#C9A961"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">10</span></span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#C9D2CD">Bull Call Spread</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#7A8A81">Defined-risk call debit spread on the bullish leg.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#7A8A81">Defined-risk call debit spread on the bullish leg: Black–Scholes Greeks, an IV band set by a GARCH forecast, the best reward-to-risk pair.</p>
           <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#C9A961">Sealed · unlocked by verdict</div>
         </article>
         <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#0F1512;border:1px solid #2A2417;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
-          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-trending-down" style="font-size:22px;color:#C9A961"></i><span style="display:flex;align-items:center;gap:7px"><i class="ti ti-lock" style="font-size:12px;color:#C9A961"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">10</span></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-trending-down" style="font-size:22px;color:#C9A961"></i><span style="display:flex;align-items:center;gap:7px"><i class="ti ti-lock" style="font-size:12px;color:#C9A961"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">11</span></span></div>
           <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#C9D2CD">Bear Put Spread</h3>
-          <p style="font-size:13.5px;line-height:1.6;color:#7A8A81">Defined-risk put debit spread on the bearish leg.</p>
+          <p style="font-size:13.5px;line-height:1.6;color:#7A8A81">Defined-risk put debit spread on the bearish leg, built by the same engine with the delta bands mirrored.</p>
           <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#C9A961">Sealed · unlocked by verdict</div>
+        </article>
+      </div>
+
+      <div style="margin-top:34px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Automation</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px;perspective:1200px">
+        <article data-tilt="" style="position:relative;padding:22px 22px 20px;background:#111814;border:1px solid #1F2A24;border-radius:12px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
+          <div style="display:flex;align-items:center;justify-content:space-between"><i class="ti ti-robot" style="font-size:22px;color:#3AC493"></i><span style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">12</span></div>
+          <h3 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:23px;margin:14px 0 8px;color:#E9EEEB">Automation</h3>
+          <p style="font-size:13.5px;line-height:1.6;color:#93A49B">Walks the pair → fundamental → spread chain across 20 sectors and the Mega and Large cap buckets, queues proposals, and places nothing until a human clicks Confirm.</p>
+          <div style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10.5px;color:#5F6F66"><br></div>
         </article>
       </div>
     </div>
   </section>
 
-  <section id="meridian" data-screen-label="Meridian" style="position:relative;z-index:4;padding:clamp(70px,10vh,120px) clamp(18px,4vw,54px);border-top:1px solid #1F2A24;background:linear-gradient(180deg,#0E1512,#0C110F)">
+  <section id="meridian" data-screen-label="Models" style="position:relative;z-index:4;padding:clamp(70px,10vh,120px) clamp(18px,4vw,54px);border-top:1px solid #1F2A24;background:linear-gradient(180deg,#0E1512,#0C110F)">
     <div style="max-width:1180px;margin:0 auto">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 03 — ML Algorithms</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 03 — The models</div>
       <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
-        <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 0">Three learners, three markets.</h2>
-        <p style="max-width:400px;font-size:14.5px;line-height:1.6;color:#5F6F66">A transformer for direction, a state-space filter for spreads, and a multi-agent policy for crypto — each sized to its market, each tested walk-forward.</p>
+        <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 0">Three models, three markets.</h2>
+        <p style="max-width:400px;font-size:14.5px;line-height:1.6;color:#5F6F66">A state-space filter for equity spreads, a ridge-plus-SDE forecaster for metal ETFs, and a two-signal ensemble for forex. Each is tested on data it could not have seen, and each prints its own scorecard.</p>
       </div>
-      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 01 · Meridian.AI — forex &amp; stocks</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 01 · Kalman × Prophet — pair trading</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start;margin-top:16px">
         <div>
-          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em">A small model<br>that had to learn.</h2>
-          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Meridian is a 430k-parameter transformer for financial time series — grouped-query attention, rotary positions, a two-expert mixture with top-2 routing, and a loss that trains price and direction together. An 11M-parameter version collapsed onto a constant prediction; the smaller network has to find real signal to reduce the loss.</p>
-          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">It retrains hourly on a CPU GitHub Actions runner and publishes each checkpoint to Hugging Face. A sanity gate blocks a degenerate model from ever shipping.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em">The spread,<br>not the forecast.</h2>
+          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The pair-trading desk looks for two stocks whose prices are tied together in a way that is statistically hard to fake. It screens one sector and one market-cap bucket at a time, runs Engle–Granger cointegration over every pair on the training window only, keeps pairs whose correlation is at least 0.7, and controls the false-discovery rate with Benjamini–Hochberg at q = 0.05. A pair survives only if an augmented Dickey–Fuller test on its price ratio rejects a unit root.</p>
+          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The trade signal is a Kalman filter that re-estimates the hedge ratio every bar and divides the innovation by its rolling 60-bar standard deviation to get a z-score. Prophet is still here, but demoted: a flat-growth fit trained only since the pair was chosen must expect the hedged five-session move to cover costs, or the entry is held. No forecast ever decides an exit; exits come from the broker&#39;s actual holdings and the live z.</p>
           <div style="margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Params</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">430K</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Features</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">44</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Sequence</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">30</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Layers</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">3</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Signal</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">Kalman z</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Entry</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">1.25 &lt; |z| ≤ 2.5</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Exit</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">|z| &lt; 0.5 · 5% stop</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Half-life</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">10–40 sessions</div></div>
           </div>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:14px">
           <div data-model3d="" style="border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(160deg,#111814,#0C110F);padding:24px 24px 20px;overflow:hidden">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <i class="ti ti-stack-2" style="font-size:17px;color:#3AC493"></i>
-              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The forward pass</div>
+              <i class="ti ti-wave-sine" style="font-size:17px;color:#3AC493"></i>
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The signal path</div>
               <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Hover a layer</div>
             </div>
 
             <div data-model-scene="" style="margin-top:20px;perspective:1200px;perspective-origin:50% 30%">
               <div data-model-stack="" style="position:relative;height:352px;transform-style:preserve-3d;transform:rotateX(16deg) rotateY(-13deg);transition:transform .3s ease-out">
 
-            <div data-layer="0" data-cap="Thirty timesteps of raw open, high, low, close and volume enter at the top of the stack." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-chart-bar" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+            <div data-layer="0" data-cap="TradingView screens one sector and one market-cap bucket (Mega above $200B, Large $10–200B, and so on). Alpaca daily closes since 2022 are split 70/30 by time, and only the first 70% may pick pairs: testing a screen on the data it was fitted to would leak the future into the result." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-arrows-shuffle" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">OHLCV · last 30 timesteps</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Input window</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Daily closes since 2022 · 70/30 split</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Sector × cap universe</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
 
-            <div data-layer="1" data-cap="Each timestep is turned into 44 indicators, z-scored on training statistics and clamped to [-10, 10] so an extreme value cannot flatten the gradients." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-adjustments" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+            <div data-layer="1" data-cap="Every pair with |ρ| ≥ 0.7 is tested in both directions and the better p-value is doubled, a Bonferroni penalty. Benjamini–Hochberg at q = 0.05 then controls the false-discovery rate: on a hundred unrelated series, raw p-values would manufacture spurious pairs by construction." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-link" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">44 technical indicators</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">RSI · MACD · BB · ATR · OBV · VWAP</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Engle–Granger + BH-FDR</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Cointegration screen</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
 
-            <div data-layer="2" data-cap="Grouped-query attention lets every timestep look at the others while sharing key and value projections; rotary positions give it relative time without a lookup table." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-binary-tree" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+            <div data-layer="2" data-cap="An augmented Dickey–Fuller test on the training price ratio must reject a unit root (p ≤ 0.1), the statistical way of saying the ratio tends to come back. One leg is then regressed on the other for the opening hedge ratio β." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-scale" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Grouped-query attention + RoPE</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Sequence mixing</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ADF on the price ratio · OLS β</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Spread construction</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
 
-            <div data-layer="3" data-cap="Two SwiGLU experts with top-2 routing — different market conditions get sent to the experts best suited to them." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-route-2" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+            <div data-layer="3" data-cap="A two-state Kalman filter (slope, intercept) with process noise δ = 10⁻⁴ updates β each bar, so the hedge drifts with the data instead of staying fixed at selection. The first 30 bars are masked as warm-up. The residual&#39;s AR(1) half-life, −ln 2 / ln(1 + β₁), must fall between 10 and 40 sessions." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-wave-sine" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Mixture of experts · top-2</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">SwiGLU routing</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Kalman filter · z = innovation / σ₆₀</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">β re-estimated every bar</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
 
-            <div data-layer="4" data-cap="Both heads forecast, and learned weights blend them into one number. The direction signal comes out of the same pass, which is why the loss trains both at once." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-target-arrow" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+            <div data-layer="4" data-cap="Enter when |z| stretches past 1.25 but not beyond 2.5: further out the pair is diverging, and those entries lost 0.71% per trade in the walk-forward. Exit under 0.5 or at a 5% stop checked on the close. After a stop the pair stays disarmed until the spread actually normalises." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-arrows-left-right" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Two prediction heads, blended</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Price + direction</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trade rules on z · Prophet veto</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Enter 1.25 &lt; |z| ≤ 2.5 · exit |z| &lt; 0.5</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
               </div>
             </div>
 
-            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">Thirty timesteps of raw open, high, low, close and volume enter at the top of the stack.</div>
+            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">TradingView screens one sector and one market-cap bucket (Mega above $200B, Large $10–200B, and so on). Alpaca daily closes since 2022 are split 70/30 by time, and only the first 70% may pick pairs: testing a screen on the data it was fitted to would leak the future into the result.</div>
           </div>
         </div>
       </div>
@@ -338,28 +361,28 @@
           <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:clamp(21px,2.5vw,28px);color:#E9EEEB">Where those numbers come from</div>
           <div style="font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66;margin-left:auto">Method, not marketing</div>
         </div>
-        <p style="margin-top:12px;max-width:820px;font-size:14.5px;line-height:1.65;color:#93A49B;text-wrap:pretty">A directional accuracy figure is only meaningful next to the protocol that produced it. Every number on this page comes from the same walk-forward test, scored against the naïve baseline it has to beat.</p>
+        <p style="margin-top:12px;max-width:820px;font-size:14.5px;line-height:1.65;color:#93A49B;text-wrap:pretty">A return per trade or a hit rate is only meaningful next to the protocol that produced it. The numbers on this page come from walk-forward tests with the rules fixed in advance, scored against the baseline they had to beat, and the failures are printed next to the wins.</p>
 
         <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
           <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">01 · The test</div>
             <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Walk-forward</div>
-            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">Pick a random historical date. Give the model only what existed up to that date, ask for the next day's move, compare the sign to what actually happened. Repeat.</p>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">Pairs are chosen on the first 70% of history and traded on the last 30%. That test window (July 2025 to October 2026, 58 pairs, 5 basis points per side) is split into halves: rules are picked on the first half and must still hold on the second.</p>
           </div>
           <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">02 · No lookahead</div>
             <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Strictly causal</div>
-            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">Every one of the 44 features is backward-looking and the target is strictly in the future. Training splits 80/20 chronologically — validation is always the most recent slice, never a shuffled sample.</p>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">The Kalman filter sees only bars up to the current one, Prophet is trained only on data after the pair was selected, the LETF backtest takes its signal at the close and fills at the next open, and macro features use FRED vintages. Nothing in a signal postdates it.</p>
           </div>
           <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">03 · The baseline</div>
-            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Always-up</div>
-            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">Markets drift up, so guessing "up" every day already scores 51.7% on FX and 51.5% on equities. Edge is accuracy minus that baseline — not accuracy minus fifty.</p>
+            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Earn the rules</div>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">The old rules netted +0.037% per trade over 1,286 walk-forward trades. The shipped rules (|z| capped at 2.5, half-life 10–40 sessions, large caps only) net +0.43% over 154 trades: +0.37% in the first half, +0.47% in the second.</p>
           </div>
           <div style="border:1px solid #223029;border-radius:11px;background:#111814;padding:16px 17px">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">04 · The test statistic</div>
-            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">z-score vs baseline</div>
-            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">A one-proportion test asks whether the gap could be luck. z = 8.4 on 960 FX predictions is not luck. z = 1.3 on 1,680 equity predictions is indistinguishable from it.</p>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">04 · The ledger</div>
+            <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;color:#E9EEEB;margin-top:8px">Failures are printed</div>
+            <p style="margin-top:8px;font-size:12.5px;line-height:1.6;color:#93A49B">The forex replay (7 majors, 45 sessions, 315 observations) scored 48.9% directional accuracy and −2.15 bp per trade, bootstrap interval −4.85 to +0.39 bp; an always-long baseline lost −2.95 bp, so neither makes money. The desk stays on a practice account, and its review says it has not earned a profitable-strategy claim.</p>
           </div>
         </div>
 
@@ -367,158 +390,174 @@
           <div style="border:1px solid #223029;border-radius:11px;background:#0C110F;padding:16px 18px">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Sample sizes</div>
             <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px;font-family:'DM Mono',monospace;font-size:12px">
-              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Forex · 8 major pairs</span><span style="color:#E9EEEB">960 predictions</span></div>
-              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Stocks</span><span style="color:#E9EEEB">1,680 predictions</span></div>
-              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Training pool</span><span style="color:#E9EEEB">≤ 60K most recent</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Pair walk-forward · 58 pairs</span><span style="color:#E9EEEB">1,286 trades</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Production replay · Large + Mega</span><span style="color:#E9EEEB">154 trades</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#93A49B">Forex replay · 7 majors</span><span style="color:#E9EEEB">315 observations</span></div>
             </div>
           </div>
           <div style="border:1px solid #223029;border-radius:11px;background:#0C110F;padding:16px 18px">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">What is being optimised</div>
-            <div style="margin-top:12px;font-family:'DM Mono',monospace;font-size:12px;color:#3AC493;background:#0F1512;border:1px solid #223029;border-radius:7px;padding:10px 12px">loss = 0.6·Huber + 0.4·weightedBCE</div>
-            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#93A49B">Price error and direction error are trained together, which is why the direction signal falls out of the same forward pass. Features are z-scored on training statistics and clamped to [-10, 10].</p>
+            <div style="margin-top:12px;font-family:'DM Mono',monospace;font-size:12px;color:#3AC493;background:#0F1512;border:1px solid #223029;border-radius:7px;padding:10px 12px">net P&amp;L per trade, after 5 bps per side</div>
+            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#93A49B">Pair rules are chosen on net return per trade after costs, not on hit rate. A finer grid of entry, exit, stop and buffer values had rank correlation −0.12 between the two halves, so it was discarded as noise rather than tuned.</p>
           </div>
           <div style="border:1px solid #2A2417;border-radius:11px;background:linear-gradient(150deg,rgba(201,169,97,.07),transparent);padding:16px 18px">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#C9A961">Why to trust the pipeline</div>
-            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#93A49B">Before publishing, a sanity gate runs each fresh checkpoint over held-out windows and looks for the failure signatures of a broken model: a constant output, a collapse onto one direction, or a blown-up prediction scale. A degenerate checkpoint is deleted instead of pushed and the run is marked failed.</p>
-            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#7A8A81">This gate exists because pre-1.0 versions reported far higher training accuracy while performing near chance live — a contaminated pipeline had let the model collapse onto a near-constant prediction.</p>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#C9A961">Why to trust the ledger</div>
+            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#93A49B">Fills settle arguments. In October 2026 every Alpaca paper fill since July was reconciled against the signals: the signalled round trips were profitable (19 trades, 79% winners), and the loss came from entries placed without a signal and from short legs closed by hand. Those entry rows were withdrawn and the registry now flags orphaned legs.</p>
+            <p style="margin-top:10px;font-size:12.5px;line-height:1.6;color:#7A8A81">The sealed desks stay sealed: OTC Track opens only once a pair or ETF triple is armed, and a spread desk opens only when a parsed verdict names it.</p>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 02 · Prophet × Kalman — pair trading</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 02 · Ridge × structured SDE — precious-metal ETFs</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start;margin-top:16px">
         <div>
-          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(30px,3.8vw,48px);line-height:1.06;letter-spacing:-.02em">The spread,<br>not the forecast.</h2>
-          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The pair-trading desk hunts for pairs that move together in a way that is statistically hard to fake: Engle–Granger cointegration over every pair in the sector — train window only, correlation floor, Benjamini–Hochberg false-discovery control — then an ADF test on the OLS hedge-ratio spread.</p>
-          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The trade signal is a Kalman filter that re-estimates the hedge ratio every bar and standardises the residual into a z-score. Prophet fits a grid-searched 365-day projection for each leg, but it stays a projection: no forecast price ever reaches the trade loop, because P&amp;L computed on forecasted prices is not real performance.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(30px,3.8vw,48px);line-height:1.06;letter-spacing:-.02em">Two forecasts,<br>no orders.</h2>
+          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The Precious Metal ETF desk forecasts twelve metal and mining funds (GLD, SLV, PPLT, PALL, CPER, DBB, SLX, LITP, NIKL, URNM, REMX, SETM) one session ahead and never trades them. A ridge regression predicts the next session&#39;s log return from eight features: 21-, 63- and 126-session returns, distance from the 200-session average, the 21-session change in the 10-year real yield, the 21-session change in the broad dollar index, log VIX, and the log of the latest realised variance. Macro series are taken as they were published at the time (FRED vintages), not as later revised.</p>
+          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Variance comes from a structured stochastic differential equation, implemented from the equations in arXiv:2610.17732 alone: log variance mean-reverts and is pushed up by the log realised measure, which itself mean-reverts toward a level tied to variance, with correlated shocks. The realised measure is Garman–Klass plus the squared overnight gap, because seven of the twelve funds trade too thinly for five-minute data.</p>
           <div style="margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Signal</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">Kalman z</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Entry</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">|z| &gt; 1.25</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Exit</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">|z| &lt; 0.5</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Warm-up</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">30 bars</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Universe</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">12 ETFs</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Features</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">8</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Refit</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">every 21 sessions</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Horizon</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">1 session</div></div>
           </div>
         </div>
+
         <div style="display:flex;flex-direction:column;gap:14px">
           <div data-model3d="" style="border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(160deg,#111814,#0C110F);padding:24px 24px 20px;overflow:hidden">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <i class="ti ti-wave-sine" style="font-size:17px;color:#3AC493"></i>
-              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The signal path</div>
+              <i class="ti ti-diamond" style="font-size:17px;color:#3AC493"></i>
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The forecast path</div>
               <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Hover a layer</div>
             </div>
+
             <div data-model-scene="" style="margin-top:20px;perspective:1200px;perspective-origin:50% 30%">
               <div data-model-stack="" style="position:relative;height:352px;transform-style:preserve-3d;transform:rotateX(16deg) rotateY(-13deg);transition:transform .3s ease-out">
-            <div data-layer="0" data-cap="The whole sector is screened on the training window only — fitting the screen on all history and then backtesting the resulting spread would leak the future into the result." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-arrows-shuffle" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+
+            <div data-layer="0" data-cap="Split-adjusted Alpaca daily bars and three FRED series (DFII10, DTWEXBGS, VIXCLS), each taken as it was known at that session&#39;s close. A revision published later never reaches a past forecast." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-chart-bar" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Adjusted closes · train window only</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Sector universe</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Daily OHLC · FRED vintages</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Inputs</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="1" data-cap="Engle–Granger over every pair, with a correlation floor and Benjamini–Hochberg false-discovery control — on 100 independent series, raw p-values would manufacture spurious pairs by construction." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-link" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+
+            <div data-layer="1" data-cap="Daily variance is measured from open, high, low and close (the Garman–Klass estimator) plus the squared overnight gap, floored at 10⁻⁸. Thin and liquid funds get the same measure, so their scores are comparable." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-ruler-measure" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Engle–Granger + BH-FDR</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Cointegration screen</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Garman–Klass + overnight gap²</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Realised measure</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="2" data-cap="One leg regresses on the other for the hedge ratio, and an ADF test checks that the resulting spread — not just the price ratio — is stationary enough to trade." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-scale" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+
+            <div data-layer="2" data-cap="Features are standardised; the penalty α is chosen from {0.001, 0.01, 0.1, 1, 10} on three chronological 21-session validation blocks with a one-session purge between fit and test. The window is 252 to 756 sessions and the model refits every 21. The band shown is ±1 standard deviation of training residuals." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-adjustments" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">OLS hedge ratio · ADF on the spread</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Spread construction</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ridge · α chosen on purged blocks</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Next-session return</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="3" data-cap="A Kalman filter re-estimates the hedge ratio each bar and standardises the residual by the square root of its conditional variance into a clean z-score. The first 30 bars are masked as warm-up." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+
+            <div data-layer="3" data-cap="Three coupled equations: price, log variance, log realised measure. 256 simulated paths give the mean and covariance of (return, log realised measure), and Adam minimises the Gaussian quasi-negative-log-likelihood for 300 steps. A refit that does not improve or turns unstable is rejected and the previous fit kept, with a gold chip saying so." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
               <i class="ti ti-wave-sine" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Kalman filter state</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Beta re-estimated every bar</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Structured SDE · Gaussian QNLL</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Next-session variance</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="4" data-cap="Enter when |z| stretches past 1.25, exit when it mean-reverts under 0.5. After a stop-out the rule stays disarmed until the spread actually normalises, so a still-diverging pair cannot be re-entered." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-arrows-left-right" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+
+            <div data-layer="4" data-cap="Variance forecasts are scored by QLIKE against a persistence forecast and by 5–95% band coverage; return forecasts by sign hit rate, MSE against a zero forecast and the daily cross-sectional Spearman rank IC. The ridge hit rate sits near one half, and the page says so." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-target-arrow" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trade rules on z</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Enter |z| &gt; 1.25 · exit |z| &lt; 0.5</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Scoreboard · QLIKE, hit rate, IC</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Scored every session</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
               </div>
             </div>
-            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">The whole sector is screened on the training window only — no future data touches the screen.</div>
+
+            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">Split-adjusted Alpaca daily bars and three FRED series (DFII10, DTWEXBGS, VIXCLS), each taken as it was known at that session&#39;s close. A revision published later never reaches a past forecast.</div>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 03 · MAPPO-LSTM — crypto</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
+      <div style="margin-top:54px;display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:#5F6F66"><span>Model 03 · AraAI × FinBERT × Clef — forex</span><span style="flex:1;height:1px;background:#1F2A24"></span></div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start;margin-top:16px">
         <div>
-          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(30px,3.8vw,48px);line-height:1.06;letter-spacing:-.02em">Three agents,<br>one critic.</h2>
-          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">One reinforcement-learning agent per market — BTC/USD, ETH/USD and ETH/BTC — each an LSTM actor that sees only its own pair. A single centralised critic watches all three at once: centralised training, decentralised execution.</p>
-          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">Training is PPO with clipped ratios and GAE; each step's reward is P&amp;L as a fraction of the agent's $10,000 book, so rewards, values and returns share one scale. Walk-forward folds retrain from scratch and keep the best-on-validation checkpoint — the one the live Alpaca desk actually loads.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(30px,3.8vw,48px);line-height:1.06;letter-spacing:-.02em">Two signals,<br>one arbiter.</h2>
+          <p style="margin-top:20px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The forex desk does not train its own forecaster. It pulls MeridianAlgo&#39;s open-source Meridian.AI checkpoint from Hugging Face (a transformer of about 430k parameters with grouped-query attention, rotary positions and a two-expert mixture) and asks it for five-day forecasts on up to 19 OANDA pairs. A BUY needs a positive predicted move, confidence of at least 0.70 and a bullish 20-over-50-day average; SELL is the mirror.</p>
+          <p style="margin-top:14px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">A second signal scores RSS headlines from ForexLive, FXStreet and Investing.com with FinBERT: base-currency sentiment minus quote-currency sentiment, BUY at or above +0.15, SELL at or below −0.15. When the two disagree, the evidence goes to Cloudflare&#39;s Clef-omni, whose pick counts only at probability 0.6 or higher; otherwise a human chooses. Positions are quarter-Kelly, capped at 2% of balance at risk and 5,000 units per pair, and nothing is sent until the submit button is clicked. The desk&#39;s own replay found no edge, and that number is printed below.</p>
           <div style="margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Agents</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">3</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Window</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">20 × 14</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">LSTM hidden</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">64</div></div>
-            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Clip ε</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">0.2</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Pairs</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">≤ 19</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Clef floor</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">p ≥ 0.6</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Sizing</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">¼ Kelly · 2% cap</div></div>
+            <div style="border:1px solid #1F2A24;border-radius:9px;padding:12px 14px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Replay accuracy</div><div style="font-family:'DM Mono',monospace;font-size:17px;color:#E9EEEB;margin-top:5px">48.9%</div></div>
           </div>
         </div>
+
         <div style="display:flex;flex-direction:column;gap:14px">
           <div data-model3d="" style="border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(160deg,#111814,#0C110F);padding:24px 24px 20px;overflow:hidden">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <i class="ti ti-topology-star-3" style="font-size:17px;color:#3AC493"></i>
-              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The agent loop</div>
+              <i class="ti ti-currency-dollar" style="font-size:17px;color:#3AC493"></i>
+              <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:22px;color:#E9EEEB">The decision path</div>
               <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Hover a layer</div>
             </div>
+
             <div data-model-scene="" style="margin-top:20px;perspective:1200px;perspective-origin:50% 30%">
               <div data-model-stack="" style="position:relative;height:352px;transform-style:preserve-3d;transform:rotateX(16deg) rotateY(-13deg);transition:transform .3s ease-out">
-            <div data-layer="0" data-cap="Each agent sees a 20-step window of 14 features — OHLCV, trade count, VWAP, EMAs, SMA, ADX, DMI and ATR — for its own pair only." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-layout-grid" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+
+            <div data-layer="0" data-cap="Majors, crosses and four exotics from Yahoo Finance, filtered to the instruments the OANDA practice account offers. Headlines arrive separately over RSS." style="position:absolute;left:0;right:0;top:0px;height:56px;transform:translateZ(0px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-chart-bar" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">20 × 14 windows · 3 pairs</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Local observations</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Daily bars · up to 19 pairs</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Input</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="1" data-cap="One actor per market: BTC/USD, ETH/USD, ETH/BTC. Windows are evaluated stateless, exactly matching how the PPO update re-evaluates shuffled minibatches." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+
+            <div data-layer="1" data-cap="The checkpoint is downloaded, not trained here: 44 features, a 30-step window, two SwiGLU experts. Its own model card marks v7 as frozen at about 48.7% directional accuracy against a 52.0% always-up baseline, and the desk&#39;s replay agrees." style="position:absolute;left:0;right:0;top:70px;height:56px;transform:translateZ(16px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
               <i class="ti ti-cpu" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">3 LSTM actors · 64 hidden</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Decentralised</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Meridian.AI v7 · ~430k params</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Third-party transformer</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="2" data-cap="Centralised training, decentralised execution: the critic reads all agents' observations concatenated and outputs one value estimate per agent." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-eye" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+
+            <div data-layer="2" data-cap="Each headline is tied to a currency, either by an explicit rises-versus-falls pattern or by FinBERT sentiment when only one currency is named. A pair&#39;s score is base minus quote; at least one directional article is required before a BUY or SELL is issued." style="position:absolute;left:0;right:0;top:140px;height:56px;transform:translateZ(32px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-news" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Central LSTM critic · 128 hidden</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Sees all three markets</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">FinBERT on RSS headlines</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">News score</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="3" data-cap="Clipped-ratio policy loss with an entropy bonus; advantages normalised, gradients clipped at 0.5, and rewards expressed as a fraction of each agent's $10k book so rewards, values and returns share one scale." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
-              <i class="ti ti-refresh" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
+
+            <div data-layer="3" data-cap="Agreement is taken as is. A direction against HOLD is a soft conflict and BUY against SELL a hard one; both go to Clef-omni with a bounded evidence packet of at most ten headlines and 16 KB. Its choice is applied only at probability 0.6 or higher, within a daily Neuron budget; otherwise the row waits for a human." style="position:absolute;left:0;right:0;top:210px;height:56px;transform:translateZ(48px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+              <i class="ti ti-scale" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">PPO update · clip 0.2</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">GAE λ 0.95 · γ 0.99</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Clef-omni arbitration · p ≥ 0.6</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Conflict resolution</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
-            <div data-layer="4" data-cap="Walk-forward folds retrain from scratch and keep the best-on-validation checkpoint — the one the live crypto desk loads to trade BTC and ETH on Alpaca." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
+
+            <div data-layer="4" data-cap="Risk per ticket is a quarter of the Kelly fraction, capped at 2% of balance, with the stop distance set by daily volatility and a 5-pip minimum. The batch is scaled to 90% of available margin and sent as market fill-or-kill orders to the practice account, only on click." style="position:absolute;left:0;right:0;top:280px;height:56px;transform:translateZ(64px);transform-style:preserve-3d;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid #223029;border-radius:11px;background:linear-gradient(120deg,rgba(19,27,22,.96),rgba(12,17,15,.92));box-shadow:0 18px 34px -24px rgba(0,0,0,.95);cursor:pointer;transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .3s,box-shadow .3s">
               <i class="ti ti-arrows-exchange" style="font-size:16px;color:#3AC493;flex-shrink:0"></i>
               <div style="min-width:0">
-                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Actions: hold · buy · sell</div>
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Executed on Alpaca</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:#E9EEEB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Quarter-Kelly · OANDA practice</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#5F6F66;margin-top:3px">Manual submit</div>
               </div>
               <span data-layer-dot="" style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#26332C;flex-shrink:0;transition:background .3s,box-shadow .3s"></span>
             </div>
               </div>
             </div>
-            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">Each agent sees a 20-step window of 14 features for its own pair only.</div>
+
+            <div data-model-caption="" style="margin-top:6px;min-height:56px;font-size:13px;line-height:1.6;color:#93A49B;border-top:1px solid #1F2A24;padding-top:14px;transition:opacity .25s">Majors, crosses and four exotics from Yahoo Finance, filtered to the instruments the OANDA practice account offers. Headlines arrive separately over RSS.</div>
           </div>
         </div>
       </div>
@@ -529,7 +568,7 @@
     <div style="max-width:1180px;margin:0 auto">
       <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#1D9E75">§ 04 — How to run it</div>
       <h2 style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.02em;margin:16px 0 10px">One command, then follow the wire.</h2>
-      <p style="max-width:660px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The whole lab runs as one application at one address. The desks are not independent, though: a few of them hand their work to each other, and that hand-off chain decides which tabs the sidebar will even let you open.</p>
+      <p style="max-width:660px;font-size:16px;line-height:1.68;color:#93A49B;text-wrap:pretty">The whole lab runs as one application at one address. The desks are not independent, though: a few of them hand their work to each other, and that hand-off chain decides which tabs the sidebar will even let you open. The Automation tab walks the same chain without you.</p>
 
 
       <div data-flow="" style="margin-top:42px;border:1px solid #1F2A24;border-radius:16px;background:linear-gradient(170deg,#0F1512,#0C110F);padding:clamp(20px,3vw,30px)">
@@ -587,7 +626,7 @@
         <div data-node="pair" style="position:relative;z-index:1;border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
           <div style="display:flex;align-items:center;gap:9px">
             <i class="ti ti-wallet" style="font-size:16px;color:#3AC493"></i>
-            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 08</span>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 09</span>
           </div>
           <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">Pair Trading</div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">known_pair_trading.py</div>
@@ -667,7 +706,7 @@
         <div data-node="bull" style="position:relative;z-index:1;border:1px solid #2A2417;border-radius:12px;background:#0F1512;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
           <div style="display:flex;align-items:center;gap:9px">
             <i class="ti ti-trending-up" style="font-size:16px;color:#C9A961"></i>
-            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 09</span>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 10</span>
           </div>
           <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">Bull Call Spread</div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">bull_call_spread.py</div>
@@ -677,7 +716,7 @@
         <div data-node="bear" style="position:relative;z-index:1;border:1px solid #2A2417;border-radius:12px;background:#0F1512;padding:14px 15px;cursor:pointer;transition:border-color .35s,box-shadow .35s,transform .35s,opacity .35s">
           <div style="display:flex;align-items:center;gap:9px">
             <i class="ti ti-trending-down" style="font-size:16px;color:#C9A961"></i>
-            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 10</span>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5F6F66">Desk 11</span>
           </div>
           <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:18px;color:#E9EEEB;margin-top:8px">Bear Put Spread</div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66;margin-top:4px">bear_put_spread.py</div>
@@ -698,12 +737,12 @@
       <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px">
         <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:18px 20px">
           <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">Standalone desks</div>
-          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">Four desks depend on nothing but their own feeds — open them in any order.</p>
+          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">Four desks depend on nothing but their own feeds — open them in any order. Treasury ETF Rotation reuses the Treasury desk&#39;s curve fits and checks the LETF desk&#39;s managed list before it trades.</p>
           <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:7px;font-family:'DM Mono',monospace;font-size:10.5px;color:#93A49B">
             <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">03 Forex</span>
-            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">05 Crypto</span>
-            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">06 Prediction Markets</span>
-            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">07 Treasuries</span>
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">05 Prediction Markets</span>
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">06 Treasury Securities</span>
+            <span style="border:1px solid #223029;border-radius:5px;padding:4px 9px">08 Precious Metal ETF</span>
           </div>
         </div>
         <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:18px 20px">
@@ -712,7 +751,11 @@
         </div>
         <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:18px 20px">
           <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">While you work</div>
-          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">Live account balances and open positions stream in from OANDA and Alpaca, feeding the dashboard's sparklines and blotters — entirely independent of the chain above.</p>
+          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">Balances and open positions stream in from the OANDA practice, Alpaca paper and simulated Polymarket books, feeding the dashboard's sparklines and blotters — independent of the chain above.</p>
+        </div>
+        <div style="border:1px solid #1F2A24;border-radius:12px;background:#0F1512;padding:18px 20px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5F6F66">Or let it run</div>
+          <p style="margin-top:9px;font-size:13px;line-height:1.6;color:#93A49B">The Automation tab runs the chain as a child process across 20 sectors × Mega and Large caps: screen, cointegration, SEC fundamentals, LLM bias, spread search. Proposals queue in SQLite; a human Confirm places each order, and a price that moved more than 2% or the last 15 minutes of the session refuses it.</p>
         </div>
       </div>
     </div>
@@ -773,8 +816,8 @@
               <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:21px;color:#E9EEEB">Quant Trading Platform</div>
               <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66">12/2023 — present</div>
             </div>
-            <p style="margin-top:10px;font-size:13.5px;line-height:1.65;color:#93A49B">Pair trading with a Kalman filter and Prophet forecasts, ~20% modelled return in backtest. MPT's convex QP linearised through Gurobi and skfolio for portfolio optimisation — a 15% profit improvement, stored in DuckDB. SEC EDGAR requests automate the equity-options analysis.</p>
-            <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66"><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">PyTorch</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">Gurobi</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">Alpaca</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">DuckDB</span></div>
+            <p style="margin-top:10px;font-size:13.5px;line-height:1.65;color:#93A49B">Pair trading with a Kalman-filtered hedge ratio and a Prophet entry veto, +0.43% net per trade in walk-forward on large caps after costs. Hierarchical risk parity (skfolio HRP and HERC under CVaR) sizes the book through combinatorial purged cross-validation, stored in DuckDB. SEC EDGAR XBRL requests automate the equity-options analysis.</p>
+            <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:#5F6F66"><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">skfolio</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">PyTorch</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">Alpaca</span><span style="border:1px solid #223029;border-radius:4px;padding:3px 8px">DuckDB</span></div>
           </article>
           <article data-tilt="" style="border:1px solid #1F2A24;border-radius:12px;background:#111814;padding:20px 22px;transform-style:preserve-3d;transition:border-color .25s,box-shadow .25s">
             <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
@@ -1026,7 +1069,7 @@ class Component extends DCLogic {
       },
       {
         nodes: ['letf', 'aetf', 'apair', 'otc'], edges: ['e4', 'e5', 'e3'],
-        caption: 'Two side inputs feed the tape desk: the LETF notebook saves its chosen leveraged triple to <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">ETF_triple.txt</code>, and OTC Track reads that alongside the pair for short volume and dark-pool prints.'
+        caption: 'Two side inputs feed the tape desk: the LETF notebook saves its chosen leveraged triple to <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">ETF_triple.txt</code> and arms <code style="font-family:\'DM Mono\',monospace;color:#C9D2CD">.letf_ready</code>. OTC Track unseals once either the pair or the triple is armed and reads both for short volume and dark-pool prints.'
       },
       {
         nodes: ['apair', 'fund', 'areport'], edges: ['e2', 'e6'],
