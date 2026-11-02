@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.24.2"
+__generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
     css_file="../../theme.css",
@@ -745,6 +745,7 @@ def _(forex_pairs):
         generate_pair_signals,
     )
 
+
 @app.cell
 async def _(
     apply_currency_and_pair_tags,
@@ -954,7 +955,7 @@ def _(mo, needs_resolution_df_ai, override_widgets):
         *[mo.vstack([mo.md("---"), override_widgets[_pair], mo.md(_briefs[_pair])], gap=0.25)
           for _pair in override_widgets.elements],
     ])
-    return (apply_manual_decisions,)
+    return
 
 
 @app.cell
@@ -1211,11 +1212,6 @@ def _(
     df_results = pd.DataFrame(results)
 
     mo.ui.dataframe(df_results)
-    return
-
-
-@app.cell
-def _():
     return
 
 
