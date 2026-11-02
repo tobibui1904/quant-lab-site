@@ -17,6 +17,8 @@ import urllib.parse
 
 COOKIE_NAME = "quantlab_session"
 DEFAULT_TTL = 86400  # 24h
+# Reachable without the login redirect; the codebase chatbot gates itself (assistant/api.py).
+OPEN_PREFIX = "/api/assistant/"
 MAX_LOGIN_BODY_BYTES = 2048  # a login form needs at most a few KB
 
 LOGIN_HTML = """<!doctype html>
@@ -261,6 +263,13 @@ class SiteGate:
             return await self._login(scope, receive, send)
         if scope.get("path") == "/logout" and scope["type"] == "http":
             return await self._logout(send)
+        if scope["type"] == "http" and str(scope.get("path", "")).startswith(OPEN_PREFIX):
+            # The codebase chatbot decides its own access from these two facts (assistant/api.py):
+            # it is reachable without the login redirect so the public Pages site can call it.
+            state = scope.setdefault("state", {})
+            state["site_authed"] = self.password is None or self._authed(scope)
+            state["site_password_set"] = self.password is not None
+            return await self.app(scope, receive, send)
         if self.password is None:
             return await self.app(scope, receive, send)
         if self._authed(scope):
