@@ -118,30 +118,33 @@ def _(page_header):
 
 @app.cell
 def _(mo, pd):
+    # No Treasury triples (TLT/TMF/TMV, IEF/TYD/TYO): the Treasury ETF
+    # Rotation desk owns Treasury ETFs on this account, and the two desks are
+    # kept completely separate rather than guarding against each other.
     etf_triples = pd.DataFrame({
         "Underlying": [
             "QQQ", "SPY", "IWM", "DIA",
             "SOXX", "XLK", "XLF", "XBI",
-            "EEM", "FXI", "TLT", "IEF",
+            "EEM", "FXI",
             "IYR", "GDX",
         ],
         "Bull_3x": [
             "TQQQ", "SPXL", "TNA", "UDOW",
             "SOXL", "TECL", "FAS", "LABU",
-            "EDC", "YINN", "TMF", "TYD",
+            "EDC", "YINN",
             "DRN", "NUGT",
         ],
         "Bear_3x": [
             "SQQQ", "SPXS", "TZA", "SDOW",
             "SOXS", "TECS", "FAZ", "LABD",
-            "EDZ", "YANG", "TMV", "TYO",
+            "EDZ", "YANG",
             "DRV", "DUST",
         ],
-        "Leverage": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2],
+        "Leverage": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2],
         "Sector": [
             "Nasdaq 100", "S&P 500", "Russell 2000 Small Cap", "Dow Jones 30",
             "Semiconductors", "Technology", "Financials", "Biotech",
-            "Emerging Markets", "China Large Cap", "20yr US Treasuries", "7-10yr US Treasuries",
+            "Emerging Markets", "China Large Cap",
             "Real Estate", "Gold Miners",
         ],
     })
