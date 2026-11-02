@@ -10,18 +10,14 @@ app = marimo.App(
 
 @app.cell
 def _():
-    import io
     import datetime as dt
     import os
     import pathlib
-    from concurrent.futures import ThreadPoolExecutor
 
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
     import rateslib as rl
-    import requests
-    from requests.adapters import HTTPAdapter, Retry
 
     from dotenv import load_dotenv
 
@@ -38,261 +34,41 @@ def _():
     _ = load_dotenv()
 
     return (
-        HTTPAdapter,
-        Retry,
-        ThreadPoolExecutor,
         dt,
-        io,
         mo,
         np,
         os,
         pathlib,
         pd,
-        requests,
         rl,
     )
 
 
 @app.cell
-def _(HTTPAdapter, Retry, dt, io, pd, requests):
-    """
-    TreasuryDirect FedInvest end-of-day prices for outstanding marketable
-    securities — most recent business day only.
+def _(pathlib, mo):
+    import sys as _sys
+    _here = str(pathlib.Path(mo.notebook_dir()))
+    if _here not in _sys.path:
+        _sys.path.insert(0, _here)
+    import fedinvest as _fedinvest
 
-    Per day, one row per outstanding security:
-        cusip, security_type, rate (coupon), maturity_date, call_date,
-        buy, sell, end_of_day   (prices per 100 face)
-
-    This is a price file, not a security master: no issue date, term, coupon
-    frequency, FRN spread, or TIPS index ratio. Each request is a snapshot of
-    what is outstanding THAT day — matured CUSIPs simply vanish, so anything
-    historical needs per-day pulls, which this notebook deliberately does not do.
-
-    FedInvest is a form-backed page, not a JSON API. The date form requires
-    a session cookie, a CSRF token, and a single ISO priceDate. Submit it for
-    the HTML price table; CSV export is a separate form on the detail page.
-    Non-business days return a page without prices rather than a 404.
-    """
-
-    _BASE = "https://www.treasurydirect.gov/GA-FI/FedInvest/selectSecurityPriceDate"
-
-    _COLS = ["cusip", "security_type", "rate", "maturity_date", "call_date",
-             "buy", "sell", "end_of_day"]
-
-    session = requests.Session()
-    session.mount("https://", HTTPAdapter(
-        max_retries=Retry(total=3, backoff_factor=1,
-                          status_forcelist=[429, 500, 502, 503, 504],
-                          allowed_methods=["GET", "POST"]),
-    ))
-    session.headers.update({
-        # A default python-requests UA gets served the marketing homepage instead of
-        # data on several treasurydirect paths. Send something browser-shaped.
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-        "Accept": "text/csv,text/html;q=0.9",
-    })
-
-    def _request(day):
-        """Load and submit the date form in the same session (including CSRF)."""
-        from lxml import html
-
-        form = session.get(_BASE, timeout=(10, 45))
-        form.raise_for_status()
-        tokens = html.fromstring(form.text).xpath('//input[@name="_csrf"]/@value')
-        if not tokens or not tokens[0].strip():
-            raise ValueError("FedInvest date form is missing its CSRF token")
-        payload = {
-            "priceDate": day.isoformat(),
-            "submit": "Show Prices",
-            "_csrf": tokens[0],
-        }
-        r = session.post(_BASE, data=payload, timeout=(10, 45))
-        r.raise_for_status()
-        return r.text
-
-    def _parse(body, day):
-        """
-        Parse either the CSV body or the HTML table. Non-business days return a
-        valid 200 with a page containing no rows, so an empty frame here is a
-        normal outcome, not an error.
-        """
-        if not body.lstrip().startswith("<"):
-            df = pd.read_csv(io.StringIO(body))
-        else:
-            try:
-                # Pin the flavor: on a table-less page pandas otherwise falls back to
-                # html5lib and raises ImportError, which is not the failure you think
-                # you are catching. lxml is a hard dependency here.
-                tables = pd.read_html(io.StringIO(body), flavor="lxml")
-            except (ValueError, ImportError):
-                return pd.DataFrame(columns=_COLS)          # no table => non-business day
-            df = max(tables, key=len) if tables else pd.DataFrame()
-
-        if df.empty:
-            return pd.DataFrame(columns=_COLS)
-
-        # FedInvest headers drift in spacing/case between the CSV and HTML paths;
-        # normalize once, then map the two spellings that actually differ.
-        alias = {"eod": "end_of_day", "type": "security_type"}
-        norm = {c: alias.get(k := str(c).strip().lower().replace(" ", "_"), k)
-                for c in df.columns}
-        df = df.rename(columns=norm)
-
-        missing = [c for c in ("cusip", "end_of_day") if c not in df.columns]
-        if missing:
-            raise ValueError(f"FedInvest layout changed; missing {missing}, saw {list(df.columns)}")
-
-        df = df.reindex(columns=_COLS)
-
-        for c in ("rate", "buy", "sell", "end_of_day"):
-            # The HTML table renders rates as "0.000%"; strip so they survive coercion.
-            df[c] = pd.to_numeric(df[c].astype(str).str.replace("%", "", regex=False),
-                                  errors="coerce")
-        for c in ("maturity_date", "call_date"):
-            df[c] = pd.to_datetime(df[c], errors="coerce")
-
-        df.insert(0, "price_date", pd.Timestamp(day))
-        # Drop junk rows BEFORE the string cast — astype(str) turns NaN into
-        # the literal "nan", which dropna can never remove.
-        df = df[df["cusip"].notna()]
-        df["cusip"] = df["cusip"].astype(str).str.strip().str.upper()
-        return df
+    session = _fedinvest.make_session()
 
     def fetch_latest(lookback=7):
-        """
-        Most recent business day with prices. Today's file appears after the
-        close, so start at today and walk back until a day returns rows.
-        """
-        day = dt.date.today()
-        for _ in range(lookback):
-            if day.weekday() < 5:
-                df = _parse(_request(day), day)
-                if not df.empty:
-                    return day, df
-            day -= dt.timedelta(days=1)
-        raise RuntimeError(f"no prices in the last {lookback} days — "
-                           "check _request() field names")
+        """Most recent business day with prices (see fedinvest.fetch_latest)."""
+        return _fedinvest.fetch_latest(session, lookback=lookback)
 
     return fetch_latest, session
 
 
 @app.cell
-def _(ThreadPoolExecutor, pathlib, pd, session):
+def _(session):
+    import fedinvest as _fedinvest
     import market_cache as _market_cache
 
     def fetch_terms(cusips):
-        """
-        Per-CUSIP instrument terms from the TreasuryDirect securities API —
-        auction-sourced, but these are terms of the instrument, not auction
-        stats. FedInvest itself never carries any of them.
-
-        One record per auction: instrument terms come from the ORIGINAL
-        auction (earliest issue date); `n_auctions` from all records.
-        The cached `outstanding` is the last announcement's PRE-AUCTION
-        outstanding amount, not current float. The display uses dated MSPD
-        balances instead; new issues absent from MSPD remain unknown.
-
-        Terms are immutable, so the cache never expires — except CUSIPs whose
-        latest auction is within ~90 days: those may still be reopened (note/
-        bond reopenings come 1-2 months after issue, TIPS up to ~2 months per
-        leg, bills reuse CUSIPs weekly), so they are re-fetched each run.
-        """
-        _cols = ["cusip", "issue_date", "latest_issue", "n_auctions",
-                 "security_term", "dated_date", "pay_frequency",
-                 "first_coupon_kind", "first_coupon_date",
-                 "frn_spread", "bid_to_cover", "outstanding",
-                 "tips_ref_cpi_issue", "tips_ref_cpi_base",
-                 "tips_index_ratio_issue", "tips_cpi_base_period",
-                 "tips_adj_price", "tips_unadj_price",
-                 "tips_adj_accrued_per1000", "tips_unadj_accrued_per1000",
-                 "tips_conversion_factor",
-                 "strippable", "min_strip_amount", "corpus_cusip",
-                 "tint_cusip1", "tint_cusip1_due",
-                 "tint_cusip2", "tint_cusip2_due"]
-        _cache = _market_cache.get_cache()
-        cached = _cache.load_terms(_cols)
-        # Recently auctioned CUSIPs may still be reopened: refetch them, but
-        # KEEP the old row as a fallback in case the refetch fails.
-        still_reopenable = pd.Timestamp.today() - pd.Timedelta(days=90)
-        fresh = cached[cached["latest_issue"] < still_reopenable]
-        stale = cached.loc[cached.index.difference(fresh.index)]
-        todo = sorted(set(cusips) - set(fresh["cusip"]))
-        failed = []
-
-        def one(c):
-            try:
-                r = session.get(
-                    "https://www.treasurydirect.gov/TA_WS/securities/search",
-                    params={"cusip": c, "format": "json"}, timeout=(10, 30))
-                r.raise_for_status()
-                recs = r.json()
-                if (not isinstance(recs, list) or not recs
-                        or any(not isinstance(rec, dict)
-                               or pd.isna(pd.to_datetime(rec.get("issueDate"), errors="coerce"))
-                               for rec in recs)):
-                    raise ValueError("invalid or empty Treasury terms response")
-                orig = min(recs, key=lambda x: x["issueDate"])
-                last = max(recs, key=lambda x: x["issueDate"])
-                num = lambda v: (pd.to_numeric(v, errors="coerce")
-                                 if v not in (None, "") else float("nan"))
-                date = lambda v: pd.to_datetime(v if v else None, errors="coerce")
-                txt = lambda v: v if v else None
-                return {"cusip": c,
-                        "issue_date": date(orig["issueDate"]),
-                        "latest_issue": date(last["issueDate"]),
-                        "n_auctions": len(recs),
-                        "security_term": txt(orig.get("originalSecurityTerm")),
-                        "dated_date": date(orig.get("datedDate")),
-                        "pay_frequency": txt(orig.get("interestPaymentFrequency")),
-                        "first_coupon_kind": txt(orig.get("firstInterestPeriod")),
-                        "first_coupon_date": date(orig.get("firstInterestPaymentDate")),
-                        "frn_spread": num(orig.get("spread")),
-                        "bid_to_cover": num(orig.get("bidToCoverRatio")),
-                        "outstanding": num(last.get("currentlyOutstanding")),
-                        "tips_ref_cpi_issue": num(orig.get("refCpiOnIssueDate")),
-                        "tips_ref_cpi_base": num(orig.get("refCpiOnDatedDate")),
-                        "tips_index_ratio_issue": num(orig.get("indexRatioOnIssueDate")),
-                        "tips_cpi_base_period": txt(orig.get("cpiBaseReferencePeriod")),
-                        "tips_adj_price": num(orig.get("adjustedPrice")),
-                        "tips_unadj_price": num(orig.get("unadjustedPrice")),
-                        "tips_adj_accrued_per1000": num(orig.get("adjustedAccruedInterestPer1000")),
-                        "tips_unadj_accrued_per1000": num(orig.get("unadjustedAccruedInterestPer1000")),
-                        "tips_conversion_factor": num(orig.get("tiinConversionFactorPer1000")),
-                        "strippable": txt(orig.get("strippable")),
-                        "min_strip_amount": num(orig.get("minimumStripAmount")),
-                        "corpus_cusip": txt(orig.get("corpusCusip")),
-                        "tint_cusip1": txt(orig.get("tintCusip1")),
-                        "tint_cusip1_due": date(orig.get("tintCusip1DueDate")),
-                        "tint_cusip2": txt(orig.get("tintCusip2")),
-                        "tint_cusip2_due": date(orig.get("tintCusip2DueDate"))}
-
-            except Exception:
-                failed.append(c)  # retain cached terms, if any; disclose the failed lookup
-                return None
-
-        new = []
-        if todo:
-            with ThreadPoolExecutor(max_workers=8) as pool:
-                new = [row for row in pool.map(one, todo) if row]
-
-        refetched = {row["cusip"] for row in new}
-        parts = [fresh, stale[~stale["cusip"].isin(refetched)]]
-        if new:
-            new_df = pd.DataFrame(new)
-            if not cached.empty:
-                # All-NA columns (a bills-only batch has no TIPS fields)
-                # otherwise make concat's dtype inference warn/drift.
-                new_df = new_df.astype(cached.dtypes.to_dict())
-            parts.append(new_df)
-        parts = [p for p in parts if not p.empty]
-        have = (pd.concat(parts, ignore_index=True) if parts
-                else pd.DataFrame(columns=_cols))
-        if new:
-            # Only successful refreshes may replace cloud rows. CAS merges
-            # preserve concurrent writers and cached fallbacks for failed CUSIPs.
-            have = _cache.merge_terms(new_df, _cols, baseline=cached)
-        return have, failed
+        """Per-CUSIP instrument terms (see fedinvest.fetch_terms)."""
+        return _fedinvest.fetch_terms(session, cusips, _market_cache.get_cache())
 
     return (fetch_terms,)
 
@@ -659,142 +435,24 @@ def _(dt, mo, np, pd, prices, rl):
         mo.output.append(mo.Html(_html))
 
     def _run_panel():
-        _all_bills = prices[prices["security_type"] == "MARKET BASED BILL"]
-        _settle = rl.add_tenor(prices["price_date"].iloc[0].to_pydatetime(),
-                               "1b", "F", "nyc")
-        # Quote hygiene BEFORE anything touches the curve.
-        #
-        # Two-sided only. FedInvest zeroes the buy (ask) side on near-maturity
-        # paper, and `mid` falls back to the single quoted side — so a one-sided
-        # row would be priced off a bare bid dressed up as a mid. This test must
-        # come first: a one-sided row scores spread_bp = -10000 and would sail
-        # straight through the spread gate below.
-        _b = _all_bills[(_all_bills["buy"] > 0) & (_all_bills["sell"] > 0)
-                        & (_all_bills["buy"] >= _all_bills["sell"])]
-        _b = _b.assign(spread_bp=(_b["buy"] - _b["sell"]) / _b["mid"] * 1e4)
-        # spread_bp is bp of PRICE. Today's whole distribution sits under 2.3, so
-        # 3 is a real guard against a broken quote; 10 would wave one through.
-        # And drop the last few days: a 0.03 price-point gap on a one-day bill
-        # annualizes to 14% against a 4.9% front.
-        _b = _b[(_b["spread_bp"] <= 3)
-                & (_b["maturity_date"] > pd.Timestamp(_settle) + pd.Timedelta(days=7))]
-        # No dedup on maturity. A bill reopening REUSES its CUSIP, so FedInvest
-        # cannot emit two rows for one maturity that way — the only thing that
-        # could collide is a cash-management bill with its own CUSIP, which is a
-        # real tradable security. Deduping could only ever delete one of those,
-        # the same fault that cost the coupon cell 128 securities.
-        _b = _b.sort_values("maturity_date")
-        _dropped = sorted(set(_all_bills["cusip"]) - set(_b["cusip"]))
-        if _b["maturity_date"].nunique() < 3:
+        import ust_curve as _ust
+        _settle = _ust.settlement(prices["price_date"].iloc[0])
+        try:
+            _bf = _ust.fit_bills(prices, _settle)
+        except _ust.InsufficientQuotes:
             bill_desk = {"priced": 0, "status": "Unavailable: insufficient eligible maturities"}
             _show(FI_CSS + '<div class="fi"><h2 class="fi-title">Bill analytics unavailable</h2>'
                     '<p>At least three distinct, valid two-sided maturities are required.</p></div>')
             return FI_CSS, bill_desk
-
-        def _mk(mat):
-            """A rateslib Bill. Effective is arbitrary — a bill is one cashflow,
-            so only settlement→maturity enters any calculation."""
-            return rl.Bill(
-                effective=(pd.Timestamp(mat) - pd.DateOffset(years=1)).to_pydatetime(),
-                termination=pd.Timestamp(mat).to_pydatetime(), spec="us_gbb")
-
-        # Every quote metric comes from rateslib's own Bill methods: the three
-        # quote conventions plus its risk endpoints. No hand-rolled bill math.
-        def _quotes(row):
-            _bill, _p = _mk(row["maturity_date"]), row["mid"]
-            _y = _bill.ytm(price=_p, settlement=_settle)
-            return pd.Series({
-                "discount_rate": _bill.discount_rate(price=_p, settlement=_settle),
-                "simple_rate": _bill.simple_rate(price=_p, settlement=_settle),
-                "bey": _y,
-                "mod_duration": _bill.duration(ytm=_y, settlement=_settle,
-                                               metric="modified"),
-                "dv01": _bill.duration(ytm=_y, settlement=_settle,
-                                       metric="risk") / 100.0})
-
-        bill_curve = pd.concat(
-            [_b[["cusip", "maturity_date", "mid", "spread_bp"]].reset_index(drop=True),
-             _b.apply(_quotes, axis=1).reset_index(drop=True)], axis=1)
-        bill_curve["days"] = (bill_curve["maturity_date"] - pd.Timestamp(_settle)).dt.days
-        _bills = [_mk(_m) for _m in bill_curve["maturity_date"]]
-
-        # Discount curve: rateslib's own Curve (log-linear in DF) calibrated by
-        # rateslib's Solver to every bill's BEY, weighted by quote tightness.
-        # Nodes are SPARSER than the bill count, so the solve smooths rather than
-        # interpolates — a curve threaded through every quote would fit each bill
-        # exactly and report zero richness. Nodes crowd the front, where the
-        # curve genuinely bends (sparse nodes there leave 27bp residuals).
-        _d = bill_curve["days"].values.astype(float)
-        _maxd = int(_d.max())
-        # Anchor free nodes at observed maturities. Unsupported front nodes can
-        # have zero sensitivity to every retained bill, making the solve singular.
-        # Keep fewer parameters than distinct maturities so residuals remain useful.
-        _observed = np.unique(_d.astype(int))
-        if len(_observed) < 3:
-            raise ValueError("Bill curve requires at least three distinct quoted maturities")
-        _targets = (14, 21, 30, 45, 60, 91, 121, 182, 273)
-        _interior = sorted({int(_observed[np.abs(_observed - t).argmin()])
-                            for t in _targets if _observed[0] <= t < _maxd})
-        _interior = [t for t in _interior if t < _maxd]
-        _node_days = [0] + _interior[:len(_observed) - 2] + [_maxd]
-        _curve = rl.Curve(
-            nodes={_settle + dt.timedelta(days=int(_t)): 1.0 for _t in _node_days},
-            interpolation="log_linear", convention="act365f", calendar="nyc",
-            id="bills")
-        _pricing = {"curves": _curve, "metric": "ytm", "settlement": _settle}
-        _solver = rl.Solver(
-            curves=[_curve],
-            instruments=[(_bill, _pricing) for _bill in _bills],
-            s=[float(_v) for _v in bill_curve["bey"]],
-            weights=[1.0 / (0.5 + float(_v)) for _v in bill_curve["spread_bp"]],
-            instrument_labels=list(bill_curve["cusip"]), id="billfit")
-
-        # Fair value per bill straight off the calibrated curve, via Bill.rate.
-        bill_curve["curve_bey"] = [float(_bill.rate(**_pricing)) for _bill in _bills]
-        bill_curve["curve_mid"] = [float(_bill.rate(**{**_pricing, "metric": "price"}))
-                                   for _bill in _bills]
-        # Rich/cheap in YIELD bp: a fixed PRICE threshold would mean wildly
-        # different dislocations across maturities.
-        bill_curve["resid_bp"] = (bill_curve["bey"] - bill_curve["curve_bey"]) * 100
-
+        bill_curve, _curve = _bf.bills, _bf.curve
+        _dropped, repo_rate = _bf.dropped, _bf.funding_rate
+        _maxd = int(bill_curve["days"].max())
+        _n_universe = _bf.n_universe
         # Implied forwards include risk/liquidity premia; they are not forecasts
         # of realized short rates or the policy path.
         _grid = [_settle + dt.timedelta(days=int(_t))
                  for _t in range(0, _maxd - 13, 28)] + [_settle + dt.timedelta(days=_maxd)]
         _fwd = [float(_curve.rate(_a, _z)) for _a, _z in zip(_grid[:-1], _grid[1:])]
-
-        # Carry + roll over a 4-week hold, as an actual P&L in price terms.
-        #
-        # Two forward prices, both from rateslib, compared at the SAME date:
-        #   breakeven  Bill.fwd_from_repo — what the bill must fetch to cover
-        #              financing at the observed ~1-month rate (Bill.simple_rate
-        #              of the bill nearest the horizon).
-        #   expected   Bill.rate(metric="price") off Curve.roll("28d") — the
-        #              curve shifted forward in tenor space, i.e. "curve
-        #              unchanged", which is what roll-down assumes.
-        # P&L = expected - breakeven, in bp of face.
-        #
-        # Comparing YIELDS instead (spot tenor vs rolled tenor) measures curve
-        # shape, not profit: on today's inverted front end it ranks short bills
-        # best while they actually lose, anti-correlated with realised P&L.
-        _horizon = _settle + dt.timedelta(days=28)
-        _fin = bill_curve.iloc[(bill_curve["days"] - 28).abs().argmin()]
-        repo_rate = float(_mk(_fin["maturity_date"])
-                          .simple_rate(price=_fin["mid"], settlement=_settle))
-        _rolled = _curve.roll("28d")
-
-        def _carry(_bill, _row):
-            if _row["days"] <= 35:            # matures at/inside the horizon
-                return np.nan
-            _breakeven = float(_bill.fwd_from_repo(
-                price=float(_row["mid"]), settlement=_settle,
-                forward_settlement=_horizon, repo_rate=repo_rate))
-            _expected = float(_bill.rate(curves=_rolled, metric="price",
-                                         settlement=_horizon))
-            return (_expected - _breakeven) * 100
-
-        bill_curve["carry_roll_bp"] = [_carry(_bill, _row) for _bill, (_, _row)
-                                       in zip(_bills, bill_curve.iterrows())]
 
         # ── Presentation ────────────────────────────────────────────────────
         # Rendered as native SVG in the Ledger palette rather than a matplotlib
@@ -951,7 +609,7 @@ def _(dt, mo, np, pd, prices, rl):
         <div class="fi">
           <div class="fi-eyebrow">FedInvest · settle {_settle:%d %b %Y}</div>
           <h2 class="fi-title">The bill desk</h2>
-          <div class="fi-deck">{len(bill_curve)} of {len(_all_bills)} bills priced off
+          <div class="fi-deck">{len(bill_curve)} of {_n_universe} bills priced off
             two-sided quotes and fitted to one discount curve. Colour is reserved for the
             bills that sit more than {_sig:.1f}bp from fair — green cheap, sienna rich.
             Everything else is noise at this spread.{_excl}</div>
@@ -998,76 +656,23 @@ def _(FI_CSS, bonds, dt, mo, np, pd, prices, rl):
         #
         # They are priced against a curve fitted to the WHOLE coupon universe,
         # not to themselves: fifteen scattered bonds cannot define fair value.
-        _st = prices["security_type"]
-        _u = prices[_st.isin(["MARKET BASED NOTE", "MARKET BASED BOND"])].copy()
-        _settle = rl.add_tenor(prices["price_date"].iloc[0].to_pydatetime(),
-                               "1b", "F", "nyc")
-        _u["days"] = (_u["maturity_date"] - pd.Timestamp(_settle)).dt.days
-        _u["two_sided"] = ((_u["buy"] > 0) & (_u["sell"] > 0)
-                           & (_u["buy"] >= _u["sell"]))
-        _u["spread_bp"] = np.where(_u["two_sided"],
-                                   (_u["buy"] - _u["sell"]) / _u["mid"] * 1e4, np.nan)
-        # No dedup on maturity here. That rule belongs to bills, where reissued
-        # CUSIPs share a date; distinct coupon issues legitimately mature
-        # together (a 1997 30-year and a 2017 10-year both mature Feb 2027), and
-        # deduping deletes 128 real securities — including 11 of these 15.
-        _u = _u[_u["two_sided"] & np.isfinite(_u["mid"])
-                & (_u["mid"] > 0) & (_u["days"] > 90)
-                & _u["rate"].notna()].sort_values("days")
-
-        def _mkb(_r):
-            """dated_date is the true accrual start; it drives accrued interest."""
-            _eff = (_r["dated_date"] if pd.notna(_r["dated_date"])
-                    else _r["maturity_date"] - pd.DateOffset(years=100))
-            return rl.FixedRateBond(
-                effective=pd.Timestamp(_eff).to_pydatetime(),
-                termination=_r["maturity_date"].to_pydatetime(),
-                spec="us_gb", fixed_rate=float(_r["rate"]))
-
-        _objs = [_mkb(_r) for _, _r in _u.iterrows()]
-        _u["ytm"] = [float(_o.ytm(price=float(_r["mid"]), settlement=_settle))
-                     for _o, (_, _r) in zip(_objs, _u.iterrows())]
-        if len(_u) < 3:
-            nominal_desk = {"fitted": 0, "status": "Unavailable: insufficient eligible quotes"}
+        import ust_curve as _ust
+        _settle = _ust.settlement(prices["price_date"].iloc[0])
+        try:
+            _nf = _ust.fit_nominal(prices, _settle)
+        except _ust.InsufficientQuotes as _why:
+            _status = ("Unavailable: too few quotes for curve nodes" if "nodes" in str(_why)
+                       else "Unavailable: insufficient eligible quotes")
+            nominal_desk = {"fitted": 0, "status": _status}
             ust_curve = None
-            _show(FI_CSS + '<div class="fi">Nominal curve unavailable: insufficient '
-                    'eligible two-sided quotes.</div>')
-            return nominal_desk, ust_curve
-
-        # Nodes crowd 10-15y, where these bonds sit. Sparse nodes there priced
-        # them 9bp rich purely by interpolating across a five-year gap.
-        _yrs = [0, .5, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 15, 17, 20, 25, 30]
-        _keys = sorted({int(_y * 365.25) for _y in _yrs
-                        if _y * 365.25 <= _u["days"].max()} | {0, int(_u["days"].max())})
-        if len(_keys) - 1 >= len(_u):
-            nominal_desk = {"fitted": 0, "status": "Unavailable: too few quotes for curve nodes"}
-            ust_curve = None
-            _show(FI_CSS + '<div class="fi">Nominal curve unavailable: too few quotes '
-                    'for a stable curve fit.</div>')
+            _show(FI_CSS + '<div class="fi">Nominal curve unavailable: ' + (
+                'too few quotes for a stable curve fit.' if "nodes" in str(_why)
+                else 'insufficient eligible two-sided quotes.') + '</div>')
             return nominal_desk, ust_curve
         # Exported: the TIPS cell reads breakevens off this same curve rather than
         # refitting 338 securities to a second, subtly different nominal curve.
-        ust_curve = rl.Curve(nodes={_settle + dt.timedelta(days=int(_k)): 1.0 for _k in _keys},
-                             interpolation="log_linear", convention="act365f",
-                             calendar="nyc", id="ust")
-        _pr = {"curves": ust_curve, "metric": "ytm", "settlement": _settle}
-        rl.Solver(curves=[ust_curve], instruments=[(_o, _pr) for _o in _objs],
-                  s=list(_u["ytm"]),
-                  weights=[1 / (0.5 + (_v if pd.notna(_v) else 10.0))
-                           for _v in _u["spread_bp"]], id="ustfit")
-        _u["curve_ytm"] = [float(_o.rate(**_pr)) for _o in _objs]
-        _u["resid_bp"] = (_u["ytm"] - _u["curve_ytm"]) * 100
-
-        legacy_bonds = _u[_u["cusip"].isin(set(bonds["cusip"]))].copy()
-        legacy_bonds["mod_dur"] = [float(_mkb(_r).duration(
-            ytm=_r["ytm"], settlement=_settle, metric="modified"))
-            for _, _r in legacy_bonds.iterrows()]
-        legacy_bonds["dv01"] = [float(_mkb(_r).duration(
-            ytm=_r["ytm"], settlement=_settle, metric="risk")) / 100
-            for _, _r in legacy_bonds.iterrows()]
-        legacy_bonds["accrued"] = [float(_mkb(_r).accrued(_settle))
-                                   for _, _r in legacy_bonds.iterrows()]
-        legacy_bonds = legacy_bonds.sort_values("maturity_date")
+        _u, ust_curve = _nf.bonds, _nf.curve
+        legacy_bonds = _u[_u["cusip"].isin(set(bonds["cusip"]))].sort_values("maturity_date").copy()
 
         _peers = _u[(~_u["cusip"].isin(set(bonds["cusip"])))
                     & _u["days"].between(legacy_bonds["days"].min(),
