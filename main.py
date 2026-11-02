@@ -23,10 +23,12 @@ import otc_watchlist
 import pm_positions
 import hub_events
 from site_gate import SiteGate
+from assistant import api as assistant_api  # codebase chatbot; off unless ASSISTANT_ENABLED=1
 # pipeline.confirm imports spread_engine / pair_execution from their desk folders.
 # Appended (not prepended) so no existing import in this process can be shadowed.
-for _desk in ("equities", "options"):
-    _desk_dir = str(pathlib.Path(__file__).resolve().parent / "desks" / _desk)
+# shared/ holds market_cache; desks/metals is on the path for the notebook's helper modules.
+for _desk in ("desks/equities", "desks/options", "desks/metals", "shared"):
+    _desk_dir = str(pathlib.Path(__file__).resolve().parent / _desk)
     if _desk_dir not in sys.path:
         sys.path.append(_desk_dir)
 from pipeline import fill_tracker as automation_fill_tracker
@@ -103,6 +105,14 @@ NOTEBOOKS = [
         "group":       "Markets",
         "description": "Cheapest Treasury ETF per bucket, looked through FedInvest residuals",
         "path":        "/treasury_etf",
+    },
+    {
+        "id":          "metals",
+        "label":       "Precious Metal ETF",
+        "icon":        "ti-diamond",
+        "group":       "Markets",
+        "description": "Ridge next-session return and structured-SDE variance forecasts, scored daily",
+        "path":        "/metals",
     },
     {
         "id":          "pair_trading",
@@ -191,6 +201,7 @@ marimo_asgi = (
     .with_app(path="/pred_market",               root="desks/prediction_markets/pred_market.py")
     .with_app(path="/treasury",       root="desks/fixed_income/treasury.py")
     .with_app(path="/treasury_etf",   root="desks/fixed_income/treasury_etf.py")
+    .with_app(path="/metals",         root="desks/metals/metals.py")
     .with_app(path="/known_pair_trading", root="desks/equities/known_pair_trading.py")
     .with_app(path="/bull_call_spread",   root="desks/options/bull_call_spread.py")
     .with_app(path="/bear_put_spread",   root="desks/options/bear_put_spread.py")
@@ -1715,6 +1726,8 @@ __NAV__
     pollBlotter();
   });
 </script>
+<!-- Codebase chatbot drawer: a no-op script unless ASSISTANT_ENABLED=1 (assistant/ui.js). -->
+<script src="/api/assistant/ui.js" defer></script>
 </body>
 </html>
 """
@@ -2007,11 +2020,13 @@ async def _lifespan(app: FastAPI):
     # NAV/equity sampler for the dashboard sparklines; cancelled on shutdown.
     sampler = asyncio.create_task(_history_sampler())
     tracker = asyncio.create_task(_automation_tracker())
+    await assistant_api.startup()  # no-op unless ASSISTANT_ENABLED=1; restores its state from R2
     try:
         yield
     finally:
         sampler.cancel()
         tracker.cancel()
+        await assistant_api.shutdown()  # pushes the last snapshot and removes the temp working copies
 
 
 hub = FastAPI(title="Quant Lab Hub", lifespan=_lifespan)
@@ -2198,12 +2213,17 @@ hub.include_router(automation_routes.build_router(
 # must be registered first to win. Each notebook keeps its own prefix
 # (/fundamental, /forex, ...), which is what marimo already renders its asset
 # and websocket URLs against.
+# Codebase chatbot (assistant/api.py): /api/assistant/* answers 404 unless ASSISTANT_ENABLED=1.
+# Registered before the mount so its routes win; its durable data lives on R2 only.
+PAGES_ORIGIN = "https://tobibui1904.github.io"
+hub.include_router(assistant_api.make_router(pages_origin=PAGES_ORIGIN,
+                                             repo_root=pathlib.Path(__file__).resolve().parent))
+
 # Desk session events (desk + timing only) for Grafana; see hub_events.py.
 hub.mount("/", hub_events.SessionMiddleware(marimo_asgi, hub_events.desk_map(NOTEBOOKS)))
 
 # Public edge. With SITE_PASSWORD unset this is a transparent pass-through,
-# so localhost development is unchanged. See site_gate.py.
-PAGES_ORIGIN = "https://tobibui1904.github.io"
+# so localhost development is unchanged. See site_gate.py. PAGES_ORIGIN is defined above.
 app = SiteGate(
     hub,
     password=os.environ.get("SITE_PASSWORD"),
