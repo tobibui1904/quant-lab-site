@@ -1,11 +1,14 @@
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import pathlib
 import re
 import shutil
 import subprocess
+import threading
+import sys
 import time
 from collections import deque
 from contextlib import asynccontextmanager
@@ -20,6 +23,17 @@ import otc_watchlist
 import pm_positions
 import hub_events
 from site_gate import SiteGate
+# pipeline.confirm imports spread_engine / pair_execution from their desk folders.
+# Appended (not prepended) so no existing import in this process can be shadowed.
+for _desk in ("equities", "options"):
+    _desk_dir = str(pathlib.Path(__file__).resolve().parent / "desks" / _desk)
+    if _desk_dir not in sys.path:
+        sys.path.append(_desk_dir)
+from pipeline import fill_tracker as automation_fill_tracker
+from pipeline import hub_routes as automation_routes
+from pipeline.config import PipelineConfig
+from pipeline.launcher import RunnerLauncher
+from pipeline.store import Store as AutomationStore
 
 load_dotenv(pathlib.Path(__file__).resolve().parent / ".env")
 
@@ -67,14 +81,6 @@ NOTEBOOKS = [
         "path":        "/letf",
     },
     {
-        "id":          "crypto_inference",
-        "label":       "Crypto",
-        "icon":        "ti-coins",
-        "group":       "Markets",
-        "description": "MAPPO-LSTM agents trading BTC · ETH on Alpaca",
-        "path":        "/crypto_inference",
-    },
-    {
         "id":          "pred_market",
         "label":       "Prediction Markets",
         "icon":        "ti-crystal-ball",
@@ -91,20 +97,12 @@ NOTEBOOKS = [
         "path":        "/treasury",
     },
     {
-        "id":          "corporate",
-        "label":       "Corporate Bonds",
-        "icon":        "ti-building-bank",
+        "id":          "treasury_etf",
+        "label":       "Treasury ETF Rotation",
+        "icon":        "ti-arrows-exchange",
         "group":       "Markets",
-        "description": "Per-CUSIP IG bonds priced off issuer disclosure",
-        "path":        "/corporate",
-    },
-    {
-        "id":          "muni",
-        "label":       "Municipal Bonds",
-        "icon":        "ti-building-community",
-        "group":       "Markets",
-        "description": "Per-CUSIP munis with tax-equivalent yield",
-        "path":        "/muni",
+        "description": "Cheapest Treasury ETF per bucket, looked through FedInvest residuals",
+        "path":        "/treasury_etf",
     },
     {
         "id":          "pair_trading",
@@ -131,6 +129,14 @@ NOTEBOOKS = [
         "description": "Defined-risk put debit spread on the bearish leg",
         "path":        "/bear_put_spread",
         "locked":      True,
+    },
+    {
+        "id":          "automation",
+        "label":       "Automation",
+        "icon":        "ti-robot",
+        "group":       "Automation",
+        "description": "Pair → fundamental → spreads across every sector and cap; confirm each order here",
+        "path":        "/automation",
     },
 ]
 
@@ -182,11 +188,9 @@ marimo_asgi = (
     .with_app(path="/otc_track",          root="desks/otc/OTC_Track.py")
     .with_app(path="/forex",              root="desks/forex/forex.py")
     .with_app(path="/letf",               root="desks/letf/letf.py")
-    .with_app(path="/crypto_inference",               root="desks/crypto/crypto_inference.py")
     .with_app(path="/pred_market",               root="desks/prediction_markets/pred_market.py")
     .with_app(path="/treasury",       root="desks/fixed_income/treasury.py")
-    .with_app(path="/corporate",      root="desks/fixed_income/corporate.py")
-    .with_app(path="/muni",           root="desks/fixed_income/muni.py")
+    .with_app(path="/treasury_etf",   root="desks/fixed_income/treasury_etf.py")
     .with_app(path="/known_pair_trading", root="desks/equities/known_pair_trading.py")
     .with_app(path="/bull_call_spread",   root="desks/options/bull_call_spread.py")
     .with_app(path="/bear_put_spread",   root="desks/options/bear_put_spread.py")
@@ -887,11 +891,6 @@ __NAV__
       f.style.pointerEvents = 'none';
     });
 
-    // Reopening Crypto must trigger its one-time data/model refresh.
-    if (id === 'crypto_inference' && frameCache[id]) {
-      frameCache[id].remove();
-      delete frameCache[id];
-    }
     if (frameCache[id]) {
       // Already loaded — just show it, no reload
       const f = frameCache[id];
@@ -1110,7 +1109,7 @@ __NAV__
     } catch (e) {}
   }
 
-  // ── Live venue blotters (FX via OANDA, equities/crypto via Alpaca) ──
+  // ── Live venue blotters (FX via OANDA, equities via Alpaca) ──
   // Poll /api/{venue}/positions while the front page is visible. Each ✕ is
   // a two-click close: first click arms ("close?"), second click within 4s
   // sends the close; the arm state decays back to ✕ on its own.
@@ -1961,14 +1960,58 @@ async def _history_sampler():
         await asyncio.sleep(_HIST_STEP)
 
 
+_automation_client_cache = None
+_automation_client_lock = threading.Lock()
+
+
+def _automation_clients():
+    """Alpaca trading + market-data clients for Confirm and the fill tracker.
+
+    Built once, lazily, on a worker thread (callers use asyncio.to_thread).
+    Only Alpaca keys are needed, never SEC/FINRA settings. A failure is
+    re-raised and not cached, so the next call tries again.
+    """
+    global _automation_client_cache
+    with _automation_client_lock:
+        if _automation_client_cache is None:
+            from pipeline.clients import build_trading_clients
+            _automation_client_cache = build_trading_clients()
+        return _automation_client_cache
+
+
+def _automation_trading_client():
+    return _automation_clients().trading
+
+
+async def _automation_tracker():
+    # Settles submitted pair/spread orders. settle_once holds a lock across
+    # broker calls and building the client may hit the network, so both run on
+    # a worker thread, never the event loop.
+    seen = set()
+    while True:
+        try:
+            if _automation_store.list(states=["submitting", "submitted"]):
+                await asyncio.to_thread(
+                    lambda: automation_fill_tracker.settle_once(_automation_store, _automation_trading_client()))
+                seen.clear()
+        except Exception as exc:
+            msg = str(exc)[:200]
+            if msg not in seen:
+                seen.add(msg)
+                logging.getLogger("hub.automation").warning("fill tracker: %s", msg)
+        await asyncio.sleep(5)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     # NAV/equity sampler for the dashboard sparklines; cancelled on shutdown.
     sampler = asyncio.create_task(_history_sampler())
+    tracker = asyncio.create_task(_automation_tracker())
     try:
         yield
     finally:
         sampler.cancel()
+        tracker.cancel()
 
 
 hub = FastAPI(title="Quant Lab Hub", lifespan=_lifespan)
@@ -2124,6 +2167,32 @@ async def alpaca_close(symbol: str):
         return await asyncio.to_thread(_close_alpaca_position, symbol)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+
+# ── Automation tab ──────────────────────────────────────────────────────
+# A plain page plus JSON routes; the runner is a child process so a long
+# screen cannot stall the hub. See docs/superpowers/specs/2026-10-12-pipeline-automation-design.md.
+AUTOMATION_CFG = PipelineConfig.from_env()
+_automation_store = AutomationStore(AUTOMATION_CFG.db_path)
+_ROOT = pathlib.Path(__file__).resolve().parent
+
+
+# One runner at a time. The launcher tees the child's stderr to the hub's own
+# stderr (so the log shipper still sees tracebacks) and keeps the last lines
+# for the tab, and knows whether the child is alive during its startup.
+_automation_launcher = RunnerLauncher(
+    lambda run_id: [sys.executable, "-m", "pipeline.runner", "--run-id", run_id],
+    cwd=_ROOT, sink=lambda line: sys.stderr.write(line))
+
+
+def _spawn_runner(run_id):
+    return _automation_launcher.spawn(run_id)
+
+
+# _automation_clients (defined above, beside the fill tracker) is the lazy, cached
+# Alpaca-only builder; the confirm route calls it on a worker thread.
+hub.include_router(automation_routes.build_router(
+    AUTOMATION_CFG, _automation_store, _spawn_runner, _automation_clients, root=str(_ROOT),
+    probe=_automation_launcher.probe))
 
 # Mounted last: Mount("/") matches every path, so the hub's own routes above
 # must be registered first to win. Each notebook keeps its own prefix
